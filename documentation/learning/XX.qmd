@@ -1,0 +1,17 @@
+En computación cuántica, la puerta XX (a menudo denominada Ising XX coupling gate o $R_{xx}(\theta)$) es una puerta lógica de dos cúbits que induce una rotación basada en el producto tensorial de dos matrices de Pauli X. [1, 2, 3] 
+## Características principales
+
+* Definición matemática: Aplica una rotación con un ángulo θ a través de la interacción $X \otimes X$:
+$$R_{xx}(\theta) = \exp\left(-i \frac{\theta}{2} X \otimes X\right)$$ 
+* Matriz de representación (base computacional):
+$$R_{xx}(\theta) = \begin{bmatrix} \cos\frac{\theta}{2} & 0 & 0 & -i\sin\frac{\theta}{2} \\ 0 & \cos\frac{\theta}{2} & -i\sin\frac{\theta}{2} & 0 \\ 0 & -i\sin\frac{\theta}{2} & \cos\frac{\theta}{2} & 0 \\ -i\sin\frac{\theta}{2} & 0 & 0 & \cos\frac{\theta}{2} \end{bmatrix}$$ 
+* Entrelazamiento: Es una puerta parametrizada; cuando θ = π/2, genera el máximo entrelazamiento entre los dos cúbits.
+* Implementación: Se utiliza habitualmente en arquitecturas de iones atrapados (como hardware de IonQ) y en simuladores o SDKs como [Qiskit](https://quantum.cloud.ibm.com/docs/api/qiskit/qiskit.circuit.library.XXMinusYYGate) (RXXGate), MATLAB o [Cirq](https://quantumai.google/cirq/gatezoo) (XXPowGate). [1, 2, 3, 4] 
+
+Para ampliar sobre cómo se utilizan estas operaciones en circuitos, puedes consultar la [Lista de puertas lógicas cuánticas en Wikipedia](https://en.wikipedia.org/wiki/List_of_quantum_logic_gates). [5] 
+
+[1] [https://quantum.cloud.ibm.com](https://translate.google.com/translate?u=https://quantum.cloud.ibm.com/docs/api/qiskit/qiskit.circuit.library.RXXGate&hl=es&sl=en&tl=es&client=sge)
+[2] [https://www.mathworks.com](https://www.mathworks.com/help/matlab/ref/rxxgate.html)
+[3] [https://gate.directory](https://gate.directory/gates/rxx/)
+[4] [https://quantumai.google](https://quantumai.google/cirq/gatezoo)
+[5] [https://en.wikipedia.org](https://translate.google.com/translate?u=https://en.wikipedia.org/wiki/List_of_quantum_logic_gates&hl=es&sl=en&tl=es&client=sge)

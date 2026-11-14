@@ -1,0 +1,17 @@
+qc.append(*oraculo): append() expects a gate/instruction and a list of qubit arguments.
+
+
+
+qc.append(grover_operator_qc): You also need to specify which qubits the circuit operates on.
+
+Why compose()?
+
+Because both oraculo and grover_operator_qc are quantum circuits, not individual gates. compose() lets you insert one circuit into another.
+
+Con instructions, se usa append.
+
+        # Se applica el oráculo a todos los qubits.
+        qc.compose(oraculo, inplace=True)
+
+        # Se aplica el operador de Grover a todos los qubits.
+        qc.append(grover_instruction, range(qubits))

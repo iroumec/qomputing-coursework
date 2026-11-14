@@ -1,0 +1,41 @@
+## Fase global
+
+Un estado cuántico $|\psi\rangle$ y $e^{i\alpha}|\psi\rangle$ son físicamente el mismo estado. Matemáticamente:
+
+$$|\langle x | e^{i\alpha}\psi\rangle|^2 = |e^{i\alpha}|^2\,|\langle x|\psi\rangle|^2 = |\langle x|\psi\rangle|^2$$
+
+Lo que sí tiene significado físico es la **fase relativa** entre componentes, por ejemplo entre $|0\rangle$ y $|1\rangle$ en $\frac{|0\rangle + e^{i\varphi}|1\rangle}{\sqrt{2}}$. Los apuntes de la Universidad de Tennessee sobre computación cuántica lo resumen así: en mecánica cuántica la fase global no tiene significado físico y solo importa la fase relativa.
+
+Para una compuerta $U$, multiplicarla por $e^{i\alpha}$ no cambia nada de lo que podés medir si la aplicás sola. Por eso $Z$ y $Rz(\pi) = -iZ$ son "la misma compuerta" en un circuito sin control.
+
+## Cuándo deja de ser global
+
+Cuando la compuerta se aplica de forma **controlada**. PennyLane lo explica en su documentación de compilación: una fase global no afecta los resultados de medición del subrutina, pero si esta se aplica controlada, la fase se vuelve local y produce un desfase relativo entre estados del qubit de control. Un comentario en Physics Forums da el mismo argumento con un ejemplo de dos qubits: si un $U$ se aplica controlado por otro qubit, solo actúa en las ramas de la superposición donde el control está activo, y su factor de fase "global" pasa a ser relativo y detectable.
+
+También se ve en la práctica. En un issue de Cirq, los desarrolladores señalan que las descomposiciones de compuertas suelen ignorar la fase global porque normalmente no es observable, pero hay que tenerla en cuenta para descomponer correctamente las compuertas controladas, donde la fase global se convierte en una fase relativa observable.
+
+## Phase kickback
+
+Sea $|\psi\rangle$ un autoestado de $U$, con $U|\psi\rangle = e^{2\pi i\phi}|\psi\rangle$, y un qubit de control en $|+\rangle$:
+
+$$C\text{-}U\;\Big(\tfrac{|0\rangle + |1\rangle}{\sqrt{2}}\otimes|\psi\rangle\Big) = \tfrac{|0\rangle + e^{2\pi i\phi}|1\rangle}{\sqrt{2}}\otimes|\psi\rangle$$
+
+El objetivo queda intacto y el **control** recibe la fase del autovalor. El nombre viene de ahí: el tutorial de Qiskit (*Learn Quantum Computing with Qiskit*) lo describe como el autovalor que una compuerta le agrega a un qubit se "devuelve" a otro qubit a través de una operación controlada. El libro de Qiskit (versión Quantum Kittens) lo explica igual: el efecto se llama así porque el autovalor vuelve al estado del qubit de control.
+
+Otra fuente destaca que esto contradice la creencia común de que el control queda igual y el objetivo es el que cambia. Y para potencias de $U$: con $U^{2^k}$ se obtiene una fase $e^{i2\pi 2^k\phi}$ que se "devuelve" al control.
+
+Una condición importante: el kickback solo funciona limpio si el qubit objetivo está en un autoestado del unitario controlado. Si no lo está, control y objetivo se entrelazan y no queda una fase única en el control (esto se explica en el tutorial de Phase Kickback (Explained)). Por eso tu código prepara el objetivo en $|+\rangle$ y analiza cada componente de la base computacional: $|0\rangle$ y $|1\rangle$ son autoestados de $Z$ y de $Rz$.
+
+## Cómo conecta con tu Ejercicio 2
+
+El QPE se apoya en el kickback. El notebook de QPE del libro de Qiskit dice que el algoritmo usa el kickback para escribir la fase de $U$ (en la base de Fourier) en los $t$ qubits del registro de conteo, y luego se usa $QFT^\dagger$ para pasarla a la base computacional.
+
+Entonces, para $U = e^{i\alpha}V$, el control recibe $e^{i(\alpha + \lambda)}$ y el QPE estima $\alpha + \lambda$, no solo $\lambda$. Hay un artículo sobre QPE con retardos temporales que describe esto como un paso explícito: se transforma la fase "global" del autovector del operador en una fase relativa medible mediante la técnica de phase kickback.
+
+## Qué leer
+
+- **Nielsen & Chuang, *Quantum Computation and Quantum Information*:** es la referencia estándar. El tutorial de Qiskit sobre fase iterativa señala que en este texto cada bit de la fase se codifica en un qubit distinto del registro usando el phase kickback de las operaciones unitarias controladas. Los capítulos relevantes son el 5 (QFT y estimación de fase) y la sección sobre compuertas controladas (cap. 4). No pude verificar los números exactos de sección, así que confirmalos en tu edición.
+- **Libro de Qiskit, capítulo de Phase Kickback y de QPE:** es el más cercano a tu código, con ejemplos en Qiskit.
+- **Documentación de PennyLane, *ctrl global phase*:** es el más directo para tu Ejercicio 2, porque trata específicamente cómo una fase global se vuelve relativa al controlar.
+
+Si vas a citar en el informe, te conviene Nielsen & Chuang como fuente principal y el libro de Qiskit para la parte de implementación.

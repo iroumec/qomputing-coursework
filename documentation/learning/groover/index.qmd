@@ -1,0 +1,92 @@
+# Grover
+
+La probabilidad de sacarla primera o última es la misma. Cambia el costo.
+
+El algoritmo de Grover se compone de dos partes:
+
+- Un oráculo o detector de soluciones. -> Es como establecer la función booleana para qué valores es verdad la expresión.
+- Un operador Grover. -> Es encontrar los valores que satisfacen la función booleana.
+
+Al aplicar la hadamard, nivelo todo.
+
+El oráculo identifica cambiando la fase. Aún no se tiene la solución.
+
+Simetría -> Lo que está arriba de la meda, pasa a estar debajo de la media. Es una reflexión.
+Como el oráculo colocó la solución debajo del todo, al hacer la reflexión este resalta.
+
+x con la raya encima es la media.
+
+$|s\rangle$ es todo en superposición.
+
+Trato a todos los valores como dos estados: la solución o no solución.
+
+$|s'\rangle$ -> Todos los estados en superposición. Los veo como un estado.
+
+$s'$ -> Todos los estados en superposiicón.
+
+$s'$ y $v$ son ortogonales. Hago el producto escalar de $v$ con cada estado.
+
+En los estados básicos tengo 1 en cada posición.
+
+**La solución es ortogonal a todos los demás estados**.
+
+Groover comienza a mover $|s\rangle$ de forma que se acerque lo más posible a $|v\rangle$.
+
+$|r\rangle$ está simétricamente abajo a $|s\rangle$ con respecto a $|s'\rangle$. Luego, se proyecta con respecto a $|s\rangle$.
+
+$\langle s | rM \rangle$ -> Producto escalar de $s$ con $rm$.
+
+Si voy demasiado rápido, puedo pasarme de largo de $|v\rangle$. El algoritmo no converge.
+
+Después de la priemra iteración, la solución ya no se encuentra en $|s\rangle$, sino que se encuentra en $|q\rangle$.
+
+Independientemente de los shots y de la complejidad lógica del algoritmo, tengo que tener varias repeticiones.
+
+Voy agregando \theta por iteración. Pero no puedo exceder $\pi/2$.
+
+De acuerdo al $\theta$, obtengo la cantidad de iteraciones que necesito hacer.
+
+"El arcotangente de un número pequeño es aproximadamente ese número pequeño".
+
+H x H = I, ya que el Hadamard es su propia inversa.
+
+Del operador de Grover, se debe encontrar su circuito matemáticamente.
+
+Para resaltar lo que me dio el detector, debo cambiar la fase al 0 y no a los demás. Otra forma es cambiársela a todas las demás y no al 0. El efecto es el mismo.
+
+Si hay más de una solución, me voy a pasar de $\sqrt{N}$ más rápido. Porque hay máas chances, hay más soluciones. Ya no tengo 1/N, sino M/N.
+
+Es preferible hacer pocas iteraciones y no pasarme antes que pasarme.
+
+La complejidad, para múltiples soluciones, sigue siendo $O(\sqrt{N})$.
+
+Los oráculos/detectores son funciones booleanadas.
+
+$x_4$ es un auxiliar.
+
+La gracia del ejemplo es que o es verdad uno ó es verdad el otro. Si quisiera hacer un "o" normal, necesitaría pensarlo mejor.
+
+x3 cambia la fase a una de las soluciones.
+
+Siempre en computación cuántica se debe restaurar.
+
+Al qubit más significativo lo cambio de fase. ¿Por qué? Porque es la convención que adoptó el Vasco.
+
+Al cambiar la fase de x3, se cambia la fase de todo el estado.
+
+Ponerle un - a $|x_3\rangle |x_2 \rangle |x_1 \rangle |x_0 \rangle$ hace que cambie el signo de todo.
+
+x3 arranca en 1.
+
+Hacer el oráculo es un arte. Grover es librería. En el oráculo existe la magia.
+
+Puede requerirse de más de un auxiliar.
+
+Para repetir las iteraciones, se replican el oráculo y el operador. En 4, el Vasco y Lucas se pasaron y se inviertió el resultado.
+
+¿Cómo averiguo K si no tengo N, M, theta...? Nada... Una forma es arriesgarse.
+La otra forma es aplicar QPE para obtener la fase del autovalor. Así, se obtiene el autovalor. Y para el autovalor se obtienen los valores de energía del Hamiltoniano.
+
+Los autovalores de la matriz de rotación son conocidos.
+
+De esta forma, con QPE, se pueden saber la cantidad de soluciones sin saber cuáles son las soluciones.

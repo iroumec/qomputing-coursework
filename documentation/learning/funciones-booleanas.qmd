@@ -1,0 +1,126 @@
+# Representación de Funciones Booleanas con Circuitos Cuánticos
+
+Claro, pero necesito un qubit adicional para el resultado. Primera fila, x0, nada. Segunda fila, x1, nada. Tercera fila, x2, un not y luego otro not. En x0, x1 y en x2 (entre los dos nots), una activación a una compuerta Z de un qubit x3. Esto es para después usarlo en Grover
+
+Tu diseño es coherente. Además, tengo que corregirme: el enlace de Quirk que me pasaste ya era exactamente eso (X en $x_2$, tres controles y la Z en un cuarto cable). Yo asumí que querías 3 qubits y te dije que sobraba uno. Estaba equivocado: el circuito era el que describís ahora.
+
+Con ese diseño hay una trampa: **la Z sobre $x_3$ solo hace algo si $x_3$ vale $|1\rangle$**.
+
+- Si $x_3$ arranca en $|0\rangle$ (el valor por defecto), la compuerta no hace nada: $Z|0\rangle = |0\rangle$. El oráculo sería la identidad y Grover no amplificaría nada, así que el histograma saldría uniforme.
+- Si $x_3$ se prepara en $|1\rangle$, el oráculo funciona, pero queda equivalente a un CCZ sobre $x_0, x_1, x_2$ (con los X alrededor de $x_2$). El qubit extra no aporta nada.
+- Con $x_3$ en $|-\rangle$ no sirve: $Z|-\rangle = |+\rangle$ cambia el estado del ancilla en lugar de dejar una fase limpia.
+
+## La forma estándar con un qubit de resultado
+
+Para usar un qubit extra como "salida" del detector, se cambia la Z por una X (CCCX, es decir, `mcx`) y se prepara $x_3$ en $|-\rangle$ (X y luego H). Así, el *phase kickback* convierte el volteo del ancilla en una fase $-1$ solo sobre el estado marcado. Es la técnica que explicamos antes, y es la versión de la teoría de Grover con oráculo $f(x)$ en un bit de salida.
+
+```python
+# Dentro del oráculo (4 qubits): NOT en x2, mcx a x3, NOT en x2.
+qc.x(2)
+qc.mcx([0, 1, 2], 3)
+qc.x(2)
+```
+
+## Qué cambia en tu `grover`
+
+Tu función actual aplica H, el oráculo y el operador de Grover sobre **todos** los qubits. Con un ancilla hay que ajustarla:
+
+- El circuito tiene `qubits + 1` qubits.
+- La H inicial y el operador de Grover (difusor) se aplican solo a los primeros `qubits`, y el ancilla queda fuera.
+- El ancilla se prepara en $|-\rangle$ antes del primer oráculo.
+- El oráculo se aplica a todos los qubits.
+
+Si el ancilla entrara en el difusor, estarías buscando en un espacio de 16 estados con un solo marcado, y el número ideal de iteraciones cambiaría.
+
+Dos cosas más:
+
+- **`measure_all()` mide también el ancilla**, así que los histogramas tendrán un bit extra a la izquierda (en la cadena, el último qubit aparece primero). Podés medir solo los 3 primeros con `measure(range(3), range(3))`, o ignorar ese bit al interpretar.
+- **El número ideal de iteraciones** para el Ejercicio 3 sale de $N = 8$ y un único estado marcado, no de 16. Con el ancilla fuera del difusor, vale el cálculo de 3 qubits.
+
+Si lo querés más simple, el oráculo de 3 qubits sin ancilla es suficiente para el ejercicio: los X alrededor de $x_2$ y tu `mcp(np.pi, [0, 1], 2)` en el medio. El ancilla es una buena práctica para ser fiel a la teoría de Grover, pero no es necesario para obtener el resultado.
+
+## Estrategia
+
+¿Cuál es la mejor estrategia para implementar funciones booleanas en circuitos cuánticas? Cuando solo tengo conjunciones (multiplicaciones), la respuesta es bastante sencilla. Pero ¿cuándo tengo disyunciones (suma) que hago? Por ejemplo, si tengo esto `x2’x1’x0 + x2.x1.x0’. ¿Cómo pienso el traspaso a cuántico? Entiendo que el primer paso sería intentar simplificar la función y demás
+
+## Idea general
+
+Un circuito cuántico es reversible, así que se calcula f en un registro objetivo con:
+
+|x⟩|y⟩ → |x⟩|y ⊕ f(x)⟩
+
+Las piezas básicas son:
+- **AND** = compuerta Toffoli (o X multicontrolada).
+- **Literal negado** (x') = rodear el control con compuertas X, o usar un control "abierto" (○).
+- **NOT** = X.
+
+El problema es que **no existe una compuerta OR nativa**, y por eso la suma es lo delicado.
+
+## Tres formas de manejar la disyunción
+
+**1. De Morgan:** a + b = ¬(¬a · ¬b). Se aplica X a los controles, una multicontrolada y X al objetivo. Funciona, pero se vuelve incómodo con muchos términos.
+
+**2. Convertir el OR en XOR (la que más se usa).** Como a ⊕ b = a + b − 2ab, cuando los términos son **disjuntos** (nunca valen 1 a la vez), a + b = a ⊕ b. Entonces basta una X multicontrolada por término, todas sobre el mismo objetivo y, como XOR es lo que hace el target, se acumulan solas.
+
+**3. Si los términos se solapan:** a + b = a ⊕ b ⊕ ab. Hay que agregar el término producto (inclusión-exclusión), o volver la suma disjunta, o calcular cada producto en un ancilla, combinarlos con De Morgan y deshacer (uncompute).
+
+Por eso, en cuántico, el objetivo de la simplificación no es la SOP clásica sino una **ESOP** (suma exclusiva de productos, o la forma de Reed-Muller/ANF). Se minimizan con herramientas como EXORCISM, y librerías como Qiskit (`PhaseOracle`) o Tweedledum las usan por dentro. Los mapas de Karnaugh no sirven directamente para esto.
+
+## Tu ejemplo
+
+f = x2'x1'x0 + x2x1x0'
+
+Son los minterms 001 y 110, que son **disjuntos**, así que f = x2'x1'x0 ⊕ x2x1x0'. Implementación directa, con y como objetivo:
+
+```
+Término 1: X(x2) X(x1) · C³X(x2,x1,x0 → y) · X(x2) X(x1)
+Término 2: X(x0)       · C³X(x2,x1,x0 → y) · X(x0)
+```
+
+Son dos compuertas con 3 controles, lo cual es caro (cada una se descompone en varias Toffoli/CNOT).
+
+### Se puede hacer mejor
+
+Mirando la estructura: f vale 1 cuando **x2 = x1 y x1 ≠ x0**. Es decir:
+
+f = (x2 ⊕ x1 ⊕ 1) · (x1 ⊕ x0)
+
+(Se verifica: 001 → 1, 110 → 1, el resto → 0.) Los XOR son lineales, o sea CNOT, y solo queda **una** Toffoli:
+
+```
+CNOT(x1 → x0)     // x0 ← x0 ⊕ x1
+CNOT(x2 → x1)     // x1 ← x1 ⊕ x2
+X(x1)             // ahora x1 = 1 ⇔ x2 = x1 originales
+CCX(x1, x0 → y)   // y ⊕= f
+X(x1)
+CNOT(x2 → x1)     // deshacer
+CNOT(x1 → x0)
+```
+
+Una Toffoli más algunas CNOT en lugar de dos C³X.
+
+## Resumen de estrategia
+
+1. Escribir f como ESOP (o ANF) en vez de SOP.
+2. Minimizar el número y tamaño de los términos, porque el costo domina en las multicontroladas.
+3. Buscar estructura lineal (XOR de variables) que se pueda resolver con CNOT, como arriba.
+4. Si se necesitan ancillas para productos intermedios, recordar hacer uncompute.
+5. Para algoritmos tipo Grover/Deutsch-Jozsa, dejar y en |−⟩ convierte el oráculo en uno de **fase** (phase kickback), sin cambiar nada del resto.
+
+Si quieres, puedo darte el circuito en Qiskit para este ejemplo o mostrarte cómo pasar una función más grande a ESOP.
+
+Sí, es válida. Lo que armaste es la opción 2 de mi respuesta anterior: como los términos son disjuntos, el OR se reemplaza por XOR y ambas multicontroladas se acumulan sobre el mismo objetivo.
+
+Leyendo el circuito de Quirk (el qubit de arriba es el 0, el de abajo es y):
+
+1. `X` en los qubits 1 y 2, luego `C³X` sobre y, luego `X` en 1 y 2. Dispara cuando q0=1, q1=0, q2=0.
+2. `X` en el qubit 0, luego `C³X` sobre y, luego `X` en el qubit 0. Dispara cuando q0=0, q1=1, q2=1.
+
+Los controles quedan restaurados, así que la entrada no se modifica y solo y cambia, como corresponde.
+
+**Ojo con la correspondencia de variables.** Tu circuito calcula `q0·q1'·q2' ⊕ q0'·q1·q2`. Eso coincide con tu función `x2'x1'x0 + x2x1x0'` solo si el qubit de arriba es **x0**, el del medio x1 y el siguiente x2. Quirk pone el bit menos significativo arriba, así que con esa convención está bien. Si pusieras x2 arriba, estarías calculando otra función (minterms 100 y 011).
+
+**Mejoras posibles:**
+
+- Quirk tiene controles "abiertos" (◦, que se activan con |0⟩). Con ellos no necesitas las X que rodean cada `C³X`, y el circuito queda en solo dos compuertas.
+- Si el costo importa (en hardware real cada `C³X` se descompone en varias Toffoli/CNOT), la versión con estructura lineal que mostré antes usa una sola Toffoli más unas CNOT. Para un ejemplo tan chico, la tuya es perfectamente razonable y más fácil de verificar.

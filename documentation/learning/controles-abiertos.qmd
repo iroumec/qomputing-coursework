@@ -1,0 +1,34 @@
+# Controles Abiertos
+
+Un **control abierto** (○) es un control que se activa cuando el qubit está en |0⟩, en lugar de |1⟩. Es lo mismo que rodear un control normal con compuertas X:
+
+```
+○───      =      X───•───X
+```
+
+No agrega ningún poder computacional. Es una comodidad de notación que evita escribir las X a mano, y al transpilar el circuito se vuelven a convertir en X alrededor de los controles.
+
+## En Qiskit
+
+Existen, pero se llaman **`ctrl_state`**. Se pasa como string o como entero:
+
+```python
+from qiskit import QuantumCircuit
+from qiskit.circuit.library import MCXGate
+
+qc = QuantumCircuit(4)   # q0=x0, q1=x1, q2=x2, q3=y
+
+# Término 1: x0=1, x1=0, x2=0
+qc.append(MCXGate(3, ctrl_state='001'), [0, 1, 2, 3])
+
+# Término 2: x0=0, x1=1, x2=1
+qc.append(MCXGate(3, ctrl_state='110'), [0, 1, 2, 3])
+```
+
+También funciona con compuertas simples (`qc.cx(0, 1, ctrl_state=0)`) y con cualquier compuerta mediante `gate.control(n, ctrl_state=...)`.
+
+**Cuidado con el orden de bits.** El string de `ctrl_state` se lee con el bit menos significativo a la derecha, y ese bit corresponde al **primer** control de la lista. En el ejemplo, los controles son `[0, 1, 2]`, así que `'001'` significa q0=1, q1=0, q2=0. Es el mismo orden little-endian que usa Quirk, y por eso coincide con tu circuito.
+
+Como entero, el equivalente es `ctrl_state=1` para el primer término y `ctrl_state=6` para el segundo.
+
+Para verificar, puedes correr `qc.decompose()` y ver las X que Qiskit inserta, o simular los 8 estados de entrada y comprobar que y solo se invierte en 001 y 110.

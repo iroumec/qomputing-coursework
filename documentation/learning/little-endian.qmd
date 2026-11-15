@@ -1,0 +1,23 @@
+# Little-Endian
+
+Los de **menor peso son los de arriba**. Qiskit usa orden *little-endian*: el qubit 0 es el bit menos significativo y se dibuja en la **primera fila**.
+
+Para 3 qubits queda así:
+
+| Fila del dibujo | Qubit | Variable |
+|---|---|---|
+| Arriba | $q_0$ | $x_0$ |
+| Medio | $q_1$ | $x_1$ |
+| Abajo (última) | $q_2$ | $x_2$ |
+
+Por lo tanto, $x_1$ y $x_0$ **no** están en las últimas filas sino en las primeras dos, y $x_2$ es la última. Tenías el orden invertido.
+
+La misma convención se ve en otros lados:
+
+- **Los `counts`:** la cadena se lee de derecha a izquierda respecto de los qubits. En `'011'`, el carácter de la derecha es $q_0$ y el de la izquierda es $q_2$, es decir, $x_2 x_1 x_0$ tal cual se escribe. Es la razón por la que en `evaluate_qpe` hacías `bits[:m][::-1]`.
+- **Las matrices (`Operator`):** el índice de la base es $x_2 \cdot 4 + x_1 \cdot 2 + x_0$, o sea que $|011\rangle$ corresponde al índice 3.
+- **El dibujo:** si preferís ver $q_{n-1}$ arriba, podés usar `qc.draw(output='mpl', reverse_bits=True)`. Solo cambia el dibujo, no el circuito.
+
+Sobre los NOT, una pista de razonamiento sin darte la solución: la Z multicontrolada solo se activa cuando **todos** los qubits involucrados valen 1. Entonces pensá en qué qubits tenés que aplicar X, si en los que querés que valgan 1 o en los que querés que valgan 0 en el estado marcado. Y recordá que los X van antes y después de la Z multicontrolada.
+
+Para comprobar tu oráculo sin fiarte del dibujo, podés mirar la diagonal de su matriz con `np.diag(Operator(oraculo).data)`: la única entrada igual a $-1$ debería estar en el índice del estado que querés marcar.

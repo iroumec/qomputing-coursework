@@ -1,0 +1,39 @@
+# Configuración global de Quarto para los informes en reports/
+lang: es
+cursada: "Cursada 2025"
+materia: "Fundamentos de la Computación Cuántica"
+
+# Logos institucionales y estética de portada
+logo-left: "assets/logos/unicen-logo.png"
+logo-right: "assets/logos/exa-logo.png"
+logo-cover: "assets/logos/qc-logo-cover.png"
+banner-image: "assets/logos/quantum-banner.png"
+
+author:
+  - name: "Roumec, Iñaki"
+    email: "iroumec@alumnos.exa.unicen.edu.ar"
+
+profesores:
+  - name: "Leiva, Lucas"
+    email: "lleiva@labset.exa.unicen.edu.ar"
+  - name: "Vázquez, Martín"
+    email: "martin.o.vazquez@gmail.com"
+
+# Referencias cruzadas en español ("Imagen 1: ...")
+crossref:
+  fig-prefix: "Imagen"
+  fig-title: "Imagen"
+  tbl-prefix: "Tabla"
+  tbl-title: "Tabla"
+
+format:
+  typst:
+    template-partials:
+      - _template/typst-template.typ
+      - _template/typst-show.typ
+    toc: true
+    toc-title: ""
+    toc-depth: 3
+    papersize: a4
+    fontsize: 12pt
+    linestretch: 1.15

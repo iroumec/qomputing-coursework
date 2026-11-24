@@ -5,3 +5,9 @@ create-env:
 
 freeze:
 	.venv/bin/pip freeze > requirements.txt
+
+quarto-render:
+	quarto render reports/informe.qmd
+
+quarto-preview:
+	quarto preview reports/informe.qmd

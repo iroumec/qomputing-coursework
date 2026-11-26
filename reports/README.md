@@ -1,69 +1,118 @@
-# Plantilla de Informes en Quarto (`reports/`)
+# Informes en Quarto (`reports/`)
 
-Esta carpeta contiene la plantilla y configuración de **Quarto + Typst** para compilar informes académicos en PDF con la estética de la cátedra **Fundamentos de la Computación Cuántica** (Facultad de Ciencias Exactas - UNICEN).
-
-## Estructura de Archivos
+Informes académicos en PDF con la estética de la cátedra (portada con logos, encabezados, numeración de páginas, texto justificado, epígrafes de figuras y tablas), generados con **Quarto + Typst**.
 
 ```text
 reports/
-├── _quarto.yml                 # Configuración general (logos, autor, docentes, formato)
-├── _template/
-│   ├── typst-template.typ      # Diseño visual (portada, barras cuánticas, tipografía, tablas)
-│   └── typst-show.typ          # Puente de variables YAML entre Quarto y Typst
-├── assets/
-│   └── logos/                  # Logos extraídos (UNICEN, EXA, logo cuántico, barra reticulada)
-├── informe.qmd                 # Documento fuente del informe (Grover y QPE)
-└── informe.pdf                 # PDF compilado listo para entregar
+├── _shared/                      # fuente única de verdad (no es un informe)
+│   ├── _quarto.yml.template      # configuración base para informes nuevos
+│   ├── _template/                # diseño visual en Typst + esqueleto
+│   ├── _partials/                # transparencia y referencias (se incluyen)
+│   └── assets/logos/             # logos institucionales
+├── _scripts/
+│   └── reports.py                # extracción de figuras y andamiaje
+├── qpe-grover/                   # un informe
+│   ├── _quarto.yml               # configuración propia (copiada al crearlo)
+│   ├── _template/                # copia de la plantilla (la actualiza sync)
+│   ├── assets/
+│   │   ├── logos/
+│   │   └── figures/              # figuras extraídas de los notebooks
+│   │       ├── qpe/              # + README.md con el manifiesto
+│   │       └── grover/
+│   ├── informe.qmd
+│   └── informe.pdf
+└── README.md
 ```
 
-## Cómo Compilar el Informe
+### Convención del guion bajo
 
-Para generar el archivo `informe.pdf`, ejecutá desde la raíz del repositorio (o dentro de `reports/`):
+Las carpetas que empiezan con `_` (`_shared/`, `_scripts/`) son **infraestructura, no informes**: no se compilan, no aparecen en `make reports-list` ni se tocan al crear un informe. El prefijo lo entiende Quarto —ignora todo lo que empiece con `_`— y además lo entiende cualquiera que mire el árbol: un directorio con `informe.qmd` es un informe, uno con `_` no.
+
+Por eso también llevan `_` las subcarpetas internas `_template/` y `_partials/`, y la configuración base se llama `_quarto.yml.template` en vez de `_quarto.yml`: así Quarto no la confunde con la configuración de un proyecto.
+
+
+## Comandos
 
 ```bash
-quarto render reports/informe.qmd
+make reports            # extrae figuras y compila todos los informes
+make report             # extrae figuras y compila $(REPORT)
+make figures            # solo extrae figuras de $(REPORT)
+make reports-list       # lista informes, notebooks y cantidad de figuras
+make report-new NAME=qft TITLE="Práctica: QFT" NOTEBOOKS="practicos/qft.ipynb"
+make report-sync        # actualiza plantilla y logos de $(REPORT)
+make report-sync REPORT=   # ídem para todos los informes
 ```
 
-Si querés previsualizar los cambios en tiempo real mientras escribís:
+`REPORT` vale `reports/qpe-grover/informe.qmd` por defecto; se puede pasar otro:
 
 ```bash
-quarto preview reports/informe.qmd
+make report REPORT=reports/qft/informe.qmd
 ```
 
-## Guía Rápida de Uso y Estética
+## Qué es compartido y qué se copia
 
-### 1. Imágenes con Descripción y Referencias Cruzadas
-Para insertar una imagen centrada con epígrafe automático (`Imagen 1: ...`):
+- **Se incluyen (compartido de verdad):** `_shared/_partials/transparencia.md` y `_shared/_partials/referencias.md`. Cada informe los trae con
 
-```markdown
-![Circuito correspondiente al oráculo de Grover.](assets/mi_circuito.png){#fig-oraculo width=85%}
-```
-
-- El prefijo `Imagen X:` en cursiva gris se agrega automáticamente.
-- Podés referenciarla en el texto escribiendo `@fig-oraculo` (se renderiza como `Imagen 1`).
-
-### 2. Citas o Consignas Centradas
-Tal como en tus informes anteriores, cualquier bloque de cita (`>`) se formatea centrado y en cursiva, ideal para colocar las consignas de los ejercicios:
-
-```markdown
-> Implementar el algoritmo de Grover para la función booleana $x_2' x_1 x_0$.
-```
-
-### 3. Tablas Académicas
-Las tablas en Markdown toman automáticamente el encabezado negro con texto blanco y filas cebradas grises/blancas:
-
-```markdown
-| Qubits | Estado | Frecuencia | ¿Correcto? |
-|:------:|:------:|:----------:|:----------:|
-| 011    | 3      | 968        | SÍ         |
-
-: Resultados obtenidos en la simulación. {#tbl-resultados}
-```
-
-### 4. Saltos de Página y Ecuaciones
-- **Salto de página:** `{{< pagebreak >}}`
-- **Ecuaciones en línea:** `$|\psi\rangle = \alpha|0\rangle + \beta|1\rangle$`
-- **Ecuaciones en bloque:**
   ```markdown
-  $$U|\psi\rangle = e^{2\pi i \theta}|\psi\rangle$$
+  {{< include ../_shared/_partials/transparencia.md >}}
   ```
+
+  Si editás esos archivos, el cambio aparece en todos los informes al recompilar. Para agregar referencias propias del práctico, se agregan en el informe después del include (por ejemplo, una sección `## Recursos específicos`).
+
+- **Se copian:** `_shared/_template/` (Quarto exige que la plantilla Typst viva dentro del proyecto del informe, porque Typst no puede leer fuera de su raíz) y los logos. `make report-sync` los actualiza; `_quarto.yml` e `informe.qmd` nunca se tocan.
+
+## Crear un informe nuevo
+
+```bash
+make report-new NAME=qft TITLE="Práctica: QFT" NOTEBOOKS="practicos/qft.ipynb practicos/qft-extra.ipynb"
+```
+
+Crea `reports/qft/` con la plantilla, los logos y el `informe.qmd` armado con los notebooks declarados. Después:
+
+```bash
+make report REPORT=reports/qft/informe.qmd
+```
+
+## Figuras automáticas desde notebooks
+
+En el front matter de `informe.qmd` se declaran los notebooks:
+
+```yaml
+---
+title: "Práctica: QFT"
+notebooks:
+  - ../../practicos/qft.ipynb
+  - ../../practicos/qft-extra.ipynb
+---
+```
+
+`make figures` los **ejecuta en memoria** (el `.ipynb` original no se modifica) pidiéndole a IPython salida SVG, y escribe cada figura en `assets/figures/<notebook>/`. También genera un manifiesto:
+
+```text
+assets/figures/qft/README.md
+```
+
+con la tabla de figuras (archivo, sección del notebook, celda) y la línea lista para copiar y pegar:
+
+```markdown
+![DESCRIPCIÓN](assets/figures/qft/ejercicio-1.svg){#fig-qft-ejercicio-1 width=90%}
+```
+
+Detalles:
+
+- **SVG vs PNG.** Las figuras de matplotlib (circuitos, histogramas) salen como SVG vectorial. Las celdas que arman la imagen a mano con `fig.savefig(..., format="png")` o `display(Image(...))` salen como PNG a la resolución original; es el caso de las tablas y de los mosaicos de circuitos de `qpe.ipynb`. El manifiesto indica el formato de cada una.
+- **Nombres.** El archivo se nombra con la última sección markdown previa (`inciso-ii.svg`). Si se agrega una figura dentro de la misma sección, las posteriores de esa sección se renumeran (`inciso-ii-2.svg`). El script avisa cuando una figura cambia de nombre.
+- **Caché.** Si el notebook no cambió, no se vuelve a ejecutar. Para forzar: `.venv/bin/python reports/_scripts/reports.py figures --force`.
+- **Sin Qiskit instalado.** Si el notebook no se puede ejecutar, se usan las salidas ya guardadas en el `.ipynb`, así el PDF igual se compila.
+- **Rutas.** `notebooks:` se resuelve respecto de la carpeta del informe; `make report-new` convierte automáticamente `practicos/x.ipynb` a `../../practicos/x.ipynb`.
+
+Dependencias necesarias (ya incluidas en `requirements.txt`): `nbclient`, `nbformat` y `PyYAML`.
+
+## Guía de escritura
+
+- **Figura con epígrafe automático:** `![Descripción.](assets/figura.svg){#fig-x width=85%}` genera *Imagen N: Descripción.* y se referencia con `@fig-x`.
+- **Consigna:** un blockquote (`>`) se centra y se pone en cursiva.
+- **Tabla con epígrafe:** agregar `: Descripción. {#tbl-x}` debajo de la tabla.
+- **Salto de página:** `{{< pagebreak >}}`.
+- **Ecuaciones:** `$...$` en línea y `$$...$$` en bloque.
+- **Secciones comunes:** `{{< include ../_shared/_partials/transparencia.md >}}` y `{{< include ../_shared/_partials/referencias.md >}}`.

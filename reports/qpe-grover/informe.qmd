@@ -2,6 +2,9 @@
 title: "Trabajo de Cursada"
 subtitle: "Estimación de Fase Cuántica (QPE) y Búsqueda de Grover"
 running-header: "Algoritmos Avanzados de Computación Cuántica"
+notebooks:
+  - ../../practicos/qpe.ipynb
+  - ../../practicos/grover.ipynb
 ---
 
 # Introducción
@@ -66,9 +69,11 @@ Como puede observarse, al preparar el qubit objetivo en $|1\rangle$, los operado
 
 Mismas instrucciones que para el inciso i), pero utilizando $m = 2$ en lugar de $m = 1$. A continuación, se presentan las implementaciones de los circuitos:
 
+![](assets/qpe-1ii-circuitos.png)
+
 A continuación, se presentan los resultados.
 
-![](assets/qpe-1ii-c.png)
+![](assets/qpe-1ii-resultados.png)
 
 Cuando $m = 2$, el espacio objetivo es de dos qubits y el operador total actúa como un producto tensorial de operadores diagonales sobre cada qubit. Como cada estado de la base computacional de 2 qubits es un producto tensorial de autovectores de un solo qubit (por ejemplo, $\vert{}01\rangle = \vert{}0\rangle \otimes \vert{}1\rangle$), cada uno de los cuatro estados ($\vert{}00\rangle, \vert{}01\rangle, \vert{}10\rangle, \vert{}11\rangle$) es también un autovector del operador conjunto sobre los $m$ qubits objetivo y estos autovectores funcionan como entrada válida del circuito. Se aclara esto porque, de no cumplir los operadores unitarios esta propiedad, sería necesario observar mediante un histograma los valores de $\theta$ obtenidos para distintos shots del circuito. De observarse que no siempre se elige un mismo valor, sería un indicio de que dicho autoestado enviado como entrada al circuito mediante los qubits objetivo no es un autovector del operador y, por consiguiente, no es válido aplicarle el algoritmo.
 
@@ -182,32 +187,18 @@ A lo largo del desarrollo de estos trabajos prácticos, se profundizó en dos de
 
 {{< pagebreak >}}
 
-# Transparencia
+{{< pagebreak >}}
 
-Se utilizó IA generativa (en particular, Claude Code y DeepSeek) para:
-
-- profundizar sobre algunos conceptos (por ejemplo, _phase kickback_);
-- generar el código encargado de generar las tablas utilizadas en el práctico de QPE;
-- generar el código encargado de agrupar los distintos circuitos y evaluaciones en un único mosaico, tanto en el práctico de QPE y el de Grover; y
-- realizar una revisión general de los prácticos y del informe en busca de _bugs_ que hayan pasado desapercibidos en el código y errores ortográficos en las redacciones.
-
-El resto de la resolución, tanto en lo que respecta a las _notebooks_ como al informe, en cuanto código, conclusiones y redacción, son propias.
+{{< include ../_shared/_partials/transparencia.md >}}
 
 {{< pagebreak >}}
 
-# Referencias y Recursos
+{{< include ../_shared/_partials/referencias.md >}}
 
-[1] Materiales de la Cursada.
+## Recursos específicos
 
-[2] https://www.youtube.com/watch?v=BeXcnjBtEto
-
-[1] M. A. Nielsen and I. L. Chuang, _Quantum Computation and Quantum Information: 10th Anniversary Edition_, Cambridge University Press, 2010.
-
-[2] “Phase Estimation and Grover's Algorithm — Qiskit Documentation”, IBM Quantum, [Online]. Disponible en: [https://quantum.cloud.ibm.com/docs/es](https://quantum.cloud.ibm.com/docs/es) (consultado: nov. 2026).
-
-[3] https://en.wikipedia.org/wiki/Phase_kickback
-
-[4] https://es.wikipedia.org/wiki/Algoritmo_cu%C3%A1ntico_de_estimaci%C3%B3n_de_fase
-
-[5] https://es.wikipedia.org/wiki/Algoritmo_de_Grover
+- Video de la clase de QPE: [https://www.youtube.com/watch?v=BeXcnjBtEto](https://www.youtube.com/watch?v=BeXcnjBtEto)
+- _Phase kickback_: [https://en.wikipedia.org/wiki/Phase_kickback](https://en.wikipedia.org/wiki/Phase_kickback)
+- Estimación de fase cuántica: [https://es.wikipedia.org/wiki/Algoritmo_cu%C3%A1ntico_de_estimaci%C3%B3n_de_fase](https://es.wikipedia.org/wiki/Algoritmo_cu%C3%A1ntico_de_estimaci%C3%B3n_de_fase)
+- Algoritmo de Grover: [https://es.wikipedia.org/wiki/Algoritmo_de_Grover](https://es.wikipedia.org/wiki/Algoritmo_de_Grover)
 

@@ -1,13 +1,46 @@
+PY := .venv/bin/python
+REPORT ?= reports/qpe-grover/informe.qmd
+REPORTS_PY := reports/_scripts/reports.py
 
+.PHONY: create-env freeze figures report reports report-new report-sync reports-list quarto-render quarto-preview
 
 create-env:
 	python3 -m venv .venv
 
 freeze:
-	.venv/bin/pip freeze > requirements.txt
+	$(PY) -m pip freeze > requirements.txt
+
+# --- Informes ---------------------------------------------------------------
+# make reports       Extrae figuras y compila todos los informes.
+# make report        Extrae figuras y compila $(REPORT).
+# make figures       Solo extrae las figuras de los notebooks de $(REPORT).
+# make report-new    Crea reports/$(NAME)/ a partir de la plantilla común.
+# make report-sync   Actualiza plantilla y logos (REPORT= para todos).
+# make reports-list  Lista informes, notebooks y cantidad de figuras.
+figures:
+	$(PY) $(REPORTS_PY) figures $(REPORT)
+
+report: figures
+	quarto render $(REPORT)
+
+reports:
+	$(PY) $(REPORTS_PY) figures
+	@for report in reports/*/informe.qmd; do \
+		echo "==> $$report"; \
+		quarto render "$$report" || exit 1; \
+	done
+
+report-new:
+	$(PY) $(REPORTS_PY) new "$(NAME)" --title "$(TITLE)" $(foreach nb,$(NOTEBOOKS),--notebook $(nb))
+
+report-sync:
+	$(PY) $(REPORTS_PY) sync $(REPORT)
+
+reports-list:
+	$(PY) $(REPORTS_PY) list
 
 quarto-render:
-	quarto render reports/informe.qmd
+	quarto render $(REPORT)
 
 quarto-preview:
-	quarto preview reports/informe.qmd
+	quarto preview $(REPORT)

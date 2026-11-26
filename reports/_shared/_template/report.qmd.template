@@ -1,0 +1,39 @@
+---
+title: "{{title}}"
+subtitle: "{{subtitle}}"
+running-header: "{{running_header}}"
+notebooks:
+{{notebooks}}
+---
+
+# Introducción
+
+Descripción general del práctico, del marco teórico y de las herramientas utilizadas (Qiskit, Python). Mencionar dónde está el código fuente cuando corresponda.
+
+# Desarrollo
+
+## Consigna
+
+> Pegar aquí la consigna del ejercicio, tal como figura en el enunciado.
+
+## Resolución
+
+Explicación de la estrategia de resolución. Las figuras generadas con `make figures` se referencian así:
+
+```markdown
+![Descripción de la figura.](assets/figures/mi-notebook/seccion.svg){#fig-ejemplo width=90%}
+```
+
+El manifiesto `assets/figures/mi-notebook/README.md` tiene la línea lista para copiar y pegar, con la ruta y la etiqueta correctas.
+
+## Resultados
+
+Análisis de los resultados obtenidos y comparación con lo esperado teóricamente.
+
+# Conclusiones
+
+Síntesis de lo aprendido y de los resultados principales.
+
+{{< include ../_shared/_partials/transparencia.md >}}
+
+{{< include ../_shared/_partials/referencias.md >}}

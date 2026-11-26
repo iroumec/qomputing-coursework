@@ -1,5 +1,3 @@
+# Caché de figuras y archivos temporales del proyecto de informes
+/.figures-cache/
 /.quarto/
-**/*.quarto_ipynb
-# Intermedios de Quarto/Typst
-*.typ
-informe.typ

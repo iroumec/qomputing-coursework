@@ -1,6 +1,6 @@
 # Fundamentos de la Computación Cuántica
 
-![logo](images/logos/qc-logo-no-background-vertically-resized.png)
+![logo](images/logo-no-background.png)
 
 En este repositorio, comparto mis resoluciones de los prácticos de la materia optativa Fundamentos de la Programación Cuántica (cursada 2025).
 
@@ -75,6 +75,17 @@ deactivate
 
 - **macOS / Linux:** `rm -rf venv`
 - **Windows:** `rmdir /s /q venv`
+
+## Informes
+
+Los informes de los prácticos se generan con Quarto + Typst a partir de las notebooks. Cada informe vive en su propia carpeta bajo `reports/` y las figuras se extraen automáticamente como SVG:
+
+```sh
+make reports      # extrae figuras y compila todos los informes
+make report-new NAME=qft TITLE="Práctica: QFT" NOTEBOOKS="practicos/qft.ipynb"
+```
+
+Ver [`reports/README.md`](reports/README.md) para la estructura, los comandos y la guía de escritura.
 
 ## Creditos
 

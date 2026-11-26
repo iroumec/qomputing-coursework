@@ -1,0 +1,80 @@
+Pero ¿siempre voy a encontrar una fase para todo autoestado del operador U?
+
+**Sí, siempre.** Cualquier autovector $\vert{}\psi\rangle$ de un operador unitario $U$ tiene asociada una fase de la forma $e^{2\pi i \theta}$, con $\theta \in [0, 1)$.
+
+La razón matemática es directa: un operador **unitario** conserva la norma de los vectores ($U^\dagger U = I$), por lo que todos sus autovalores $\lambda$ tienen módulo $1$ ($\vert{}\lambda\vert{} = 1$). En el plano complejo, cualquier número complejo de módulo $1$ puede escribirse como:
+
+$$\lambda = e^{2\pi i \theta}$$
+
+Por tanto, para todo autovector $\vert{}\psi\rangle$ de $U$ se cumple:
+
+$$U\vert{}\psi\rangle = e^{2\pi i \theta}\vert{}\psi\rangle$$
+
+### ¿Qué significa eso en la práctica?
+
+* **Matemáticamente:** Siempre existe ese $\theta$ (aunque a veces valga $0$, como ocurre cuando $U\vert{}\psi\rangle = 1 \cdot \vert{}\psi\rangle$).
+* **Algorítmicamente (en QPE):** Que exista $\theta$ no significa que siempre obtengas un valor *útil* o *fácil de leer* en un solo tiro:
+1. **Si $\theta = 0$:** El autovalor es $1$ (sin cambio de fase observable) y QPE te devolverá $0$.
+2. **Si $\theta$ no es exacto en $n$ bits:** Con $n$ qubits de estimación, QPE aproxima $\theta$ al múltiplo de $2^{-n}$ más cercano, con cierta probabilidad de acierto (al menos $\frac{4}{\pi^2} \approx 40.5\%$ en el peor caso, o más si añades bits extra de precisión).
+3. **Si el registro objetivo tiene una superposición $\sum_j c_j \vert{}\psi_j\rangle$:** Cada ejecución colapsa hacia un autoestado $\vert{}\psi_j\rangle$ con probabilidad $\vert{}c_j\vert{}^2$ y te entrega la fase $\theta_j$ asociada a ese autovector en particular.
+
+
+
+En resumen: **todo autovector de un operador unitario tiene su fase**, y QPE sirve para extraerla (o muestrear entre las fases presentes si preparaste una superposición).
+
+Claro, pero mi pregunta es: ya al operador unitario, le puedo poner cualquier autovector y aun así encontrar una fase, ¿no?
+
+Sí, **siempre que sea un autovector de ese mismo operador unitario $U$**. Si lo es, cumple $U\vert{}\psi\rangle = e^{2\pi i \theta}\vert{}\psi\rangle$ y QPE encontrará su fase $\theta$.
+
+El matiz importante está en lo que pasa si le metes **cualquier estado** que **no** sea autovector de $U$:
+
+* **Si el estado es una superposición de autovectores de $U$** ($\vert{}\phi\rangle = \sum_j c_j \vert{}\psi_j\rangle$): el circuito no "inventa" una fase para $\vert{}\phi\rangle$; en cada ejecución colapsa hacia uno de los autovectores $\vert{}\psi_j\rangle$ del operador $U$ (con probabilidad $\vert{}c_j\vert{}^2$) y te devuelve la fase $\theta_j$ de ese autovector.
+* **Si el estado es autovector de *otro* operador distinto** (por ejemplo, medir en base $X$ cuando $U$ es diagonal en base $Z$): no es autovector de $U$, así que al aplicarlo se comporta como una superposición de los autovectores de $U$ y el resultado se reparte entre las fases correspondientes a $U$.
+
+En resumen: **cualquier autovector propio de $U$ tiene su fase y QPE puede estimarla**; si metes un estado que no es autovector de $U$, el algoritmo proyectará sobre los autovectores de $U$ que lo componen.
+
+---
+
+Y ¿cómo sé cuáles son autovectores de U? Por ejemplo, para los siguientes operadores: unitary_rotation_operators = ["Z", "S", "T", "Rz(π)", "Rz(π/2)", "Rz(π/4)", "Rz(3π/4)"] y para los siguientes unitary_rotation_operators_iv = ["Rz(-π/4)", "Rz(-3π/4)"], siempre que yo pongo un autovector (sin importar el valor que sea), me da como resultado una fase. ¿Cómo me doy cuenta en el QPE de que ese operador no tiene como autovector el vector que le coloqué?
+
+Todos los operadores de tu lista —`Z`, `S`, `T` y cualquier `Rz(φ)`— son **diagonales en la base computacional** $\{\vert{}0\rangle, \vert{}1\rangle\}$. Por eso, para todos ellos, **$\vert{}0\rangle$ y $\vert{}1\rangle$ siempre son autovectores** (y cualquier otro estado que pongas allí que no sea $\vert{}0\rangle$ ni $\vert{}1\rangle$, como $\vert{}+\rangle$, no es autovector de esos operadores).
+
+### ¿Cómo te das cuenta en QPE de que el estado ingresado NO es un autovector?
+
+La señal más clara al ejecutar el circuito varias veces (shots) está en el **histograma de medición de los qubits de estimación**:
+
+1. **Si SÍ es un autovector** (por ejemplo, $\vert{}1\rangle$ en `T` o `Rz(π/4)`):
+Obtienes **un único pico dominante** (o un pico muy concentrado si $\theta$ no cabe exacto en los bits de estimación), siempre apuntando a la misma fase $\theta$.
+2. **Si NO es un autovector** (por ejemplo, $\vert{}+\rangle = \frac{\vert{}0\rangle + \vert{}1\rangle}{\sqrt{2}}$ en `Z`, `S`, `T` o `Rz(φ)`):
+El estado se descompone en los autovectores reales del operador ($\vert{}0\rangle$ y $\vert{}1\rangle$), y el resultado **se reparte entre varias fases distintas** (en el caso de $\vert{}+\rangle$, verás dos picos: uno correspondiente a la fase de $\vert{}0\rangle$, que suele ser $0$, y otro correspondiente a la fase de $\vert{}1\rangle$).
+
+---
+
+### Cómo identificar los autovectores de un operador $U$
+
+* **Por inspección / álgebra:** Resuelve $U\vert{}\psi\rangle = \lambda\vert{}\psi\rangle$. Si al aplicar $U$ el vector resultante apunta exactamente en la misma "dirección" en el espacio de estados (solo cambia por un escalar complejo de módulo $1$), es autovector.
+* **Operadores rotacionales alrededor de $Z$ (`Z`, `S`, `T`, `Rz(φ)`):** Sus autovectores son **$\vert{}0\rangle$ y $\vert{}1\rangle$**.
+* Para $\vert{}0\rangle$: `Rz(φ)|0⟩ = e^{-iφ/2}|0⟩` (en fase $[0, 1)$, equivale a $-\frac{\varphi}{4\pi} \pmod 1$).
+* Para $\vert{}1\rangle$: `Rz(φ)|1⟩ = e^{+iφ/2}|1⟩` (equivale a $+\frac{\varphi}{4\pi} \pmod 1$).
+
+
+
+En resumen: QPE **nunca te dirá "error: no es autovector"** con un mensaje explícito; simplemente **muestrea las fases de los autovectores que componen tu estado de entrada**. Si ves múltiples fases mezcladas en las mediciones, sabes que pusiste una combinación de autovectores y no uno solo.
+
+---
+
+Claro. Por ejemplo, en esta notebook, todos los valores con los que pruebo son autovectores, ¿no? Incluso cuando m = 2, que pruebo con 00, 01, 10, 11
+
+Sí, exactamente. En este caso todos los estados de la base computacional con los que probás son **autovectores** del operador que actúa sobre los qubits objetivo.
+
+Veamos por qué pasa esto en tu implementación:
+
+* **Operadores diagonales:** Todos los operadores de tu función `get_unitary_rotation_operator` ($Z$, $S$, $T$ y las distintas rotaciones $Rz$) son diagonales en la base computacional $\{\vert{}0\rangle, \vert{}1\rangle\}$. Por lo tanto, tanto $\vert{}0\rangle$ como $\vert{}1\rangle$ son autovectores de $U$ para un qubit.
+
+
+* **Aplicación sobre $m$ qubits objetivo:** En `qpe`, el bucle `for j in range(qubits_estimacion, qubits_totales)` aplica el operador controlado sobre cada uno de los $m$ qubits objetivo. Cuando $m = 2$, el espacio objetivo es de dos qubits y el operador total actúa como un producto tensorial de operadores diagonales sobre cada qubit.
+
+
+* **Estados $\vert{}00\rangle, \vert{}01\rangle, \vert{}10\rangle, \vert{}11\rangle$:** Como cada estado de la base computacional de 2 qubits es un producto tensorial de autovectores de un solo qubit (por ejemplo, $\vert{}01\rangle = \vert{}0\rangle \otimes \vert{}1\rangle$), cada uno de los cuatro estados ($\vert{}00\rangle, \vert{}01\rangle, \vert{}10\rangle, \vert{}11\rangle$) es también un **autovector** del operador conjunto sobre los $m$ qubits objetivo.
+
+En consecuencia, al preparar el registro objetivo en cualquiera de esos estados base, el algoritmo QPE estima una única fase definida (correspondiente al autovalor asociado a ese autovector), en lugar de producir una superposición de distintas fases como ocurriría si el estado inicial no fuera un autovector.

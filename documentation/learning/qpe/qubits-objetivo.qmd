@@ -1,0 +1,54 @@
+Estoy aprendiendo ahora sobre QPE. Mi duda que me surge es sobre los qubits objetivos. Entiendo que hay dos tipos de qubits involucrados en el circuito: estimación y objetivo. Los de estimación se incrementan o decrementan de acuerdo a cuán preciso quiero que sea el theta que obtengo. Pero ¿qué hay de los de objetivo? ¿Qué son exactamente?
+
+En **Quantum Phase Estimation (QPE)**, el registro de **qubits objetivo** (*target qubits*, también llamados registro de estado o *eigenstate register*) es el conjunto de qubits donde cargas el **autoestado** ($\vert{}\psi\rangle$) de un operador unitario $U$ cuya **autofase** ($\theta$) quieres estimar.
+
+Para que QPE funcione, el estado que colocas en los qubits objetivo debe cumplir una condición matemática clave:
+
+$$U \vert{}\psi\rangle = e^{2\pi i \theta} \vert{}\psi\rangle$$
+
+Es decir, al aplicar $U$ sobre $\vert{}\psi\rangle$, el estado no cambia de dirección en el espacio de Hilbert (salvo por una fase global que no se ve directamente), pero **gana el factor de fase $e^{2\pi i \theta}$** que contiene la información de $\theta$.
+
+---
+
+### ¿Qué representa exactamente $\vert{}\psi\rangle$ en la práctica?
+
+Dependiendo de qué estés resolviendo, los qubits objetivo tienen significados físicos o algorítmicos muy concretos:
+
+1. **En química cuántica o física (ej. simular una molécula):**
+El operador $U = e^{-iHt}$ es la evolución temporal generada por el Hamiltoniano $H$. Los qubits objetivo representan el **estado electrónico de la molécula** (por ejemplo, el estado fundamental o un estado excitado), y la fase $\theta$ que estimas corresponde a su **energía**.
+2. **En álgebra lineal o algoritmos más amplios (ej. HHL o búsqueda de autovalores):**
+Los qubits objetivo guardan el **autovector** $\vert{}\psi\rangle$ asociado al **autovalor** que te interesa extraer.
+3. **En un ejemplo didáctico sencillo:**
+Si pruebas QPE con una compuerta $T$ (donde $T\vert{}1\rangle = e^{i\pi/4}\vert{}1\rangle$), usas **1 qubit objetivo** preparado en $\vert{}1\rangle$. Si hubieras preparado $\vert{}0\rangle$, obtendrías fase $0$ porque $T\vert{}0\rangle = \vert{}0\rangle$.
+
+---
+
+### ¿De qué depende cuántos qubits objetivo necesitas?
+
+A diferencia de los qubits de estimación —que determinan la **precisión en bits** del valor $\theta$ que lees al final—, la cantidad de qubits objetivo depende del **tamaño del sistema o del operador $U$** que estás analizando:
+
+* Si $U$ actúa sobre 1 qubit (como una fase simple o compuerta $T$), necesitas **1 qubit objetivo**.
+* Si $U$ simula un sistema de 4 espines o un Hamiltoniano codificado en 4 qubits, necesitas **4 qubits objetivo**.
+
+---
+
+### ¿Qué pasa si no conoces el autoestado exacto $\vert{}\psi\rangle$?
+
+En la práctica, muchas veces no puedes preparar un autoestado puro exacto de entrada. En ese caso, preparas un estado $\vert{}\phi\rangle$ que se pueda escribir como una **combinación lineal (superposición)** de varios autoestados:
+
+$$\vert{}\phi\rangle = \sum_j c_j \vert{}\psi_j\rangle$$
+
+Cuando corres QPE con ese estado objetivo, el algoritmo **no falla**: colapsa de forma probabilística hacia uno de los autoestados $\vert{}\psi_j\rangle$ con probabilidad $\vert{}c_j\vert{}^2$ y te devuelve la fase $\theta_j$ correspondiente a ese autoestado.
+
+---
+
+### Cómo se relacionan ambos registros dentro del circuito
+
+* **Qubits de estimación:** Inician en $\vert{}0\rangle$, se ponen en superposición con compuertas Hadamard, actúan como **control** de las potencias controladas $C\text{-}U^{2^k}$ y reciben la **Transformada Cuántica de Fourier Inversa ($QFT^\dagger$)** antes de medirse.
+* **Qubits objetivo:** Se inicializan en $\vert{}\psi\rangle$ (o en una aproximación) y actúan como **objetivo** de esas operaciones $C\text{-}U^{2^k}$. Cada aplicación de $U^{2^k}$ "transfiere" la fase $2^k \theta$ hacia los qubits de estimación mediante *phase kickback* (retroceso de fase).
+
+--
+
+Okay. Entonces, de forma concisa, es la instanciación del autovector.
+
+Exacto. En una palabra: **es la instanciación del autovector** $\vert{}\psi\rangle$ (o una superposición de autovectores) del operador $U$ cuya fase quieres estimar.

@@ -1,0 +1,26 @@
+En el código que te mandé, ¿está bien que la fase esperada de Rz(pi/4) y Rz(3pi/4) pueda representarse con 4 bits?
+
+**Sí, en principio sí es exacto con 4 bits**, siempre que en tu convención la fase $\varphi$ quede en $\frac{1}{16}$ y $\frac{3}{16}$ (y que tu `qpe` aplique las potencias correctas de $U$ con la convención de signo/factor correspondiente).
+
+Veamos la cuenta para el autovector $\vert{}1\rangle$:
+
+* **Con la definición estándar de $R_z(\theta)$:**
+
+$$R_z(\theta) = \exp\!\left(-i\frac{\theta}{2}Z\right) = \begin{pmatrix} e^{-i\theta/2} & 0 \\ 0 & e^{i\theta/2} \end{pmatrix}$$
+
+
+
+Sobre $\vert{}1\rangle$, el autovalor tiene fase $\frac{\theta}{2}$. Igualando con $e^{2\pi i \varphi}$ (o su conjugado según el signo de tu QFT inversa):
+* Para $\theta = \frac{\pi}{4}$: $\frac{\theta}{2} = \frac{\pi}{8} = 2\pi \cdot \frac{1}{16} \implies \varphi = \frac{1}{16} = (0.0001)_2$.
+* Para $\theta = \frac{3\pi}{4}$: $\frac{\theta}{2} = \frac{3\pi}{8} = 2\pi \cdot \frac{3}{16} \implies \varphi = \frac{3}{16} = (0.0011)_2$.
+
+
+
+Como $1/16 = 2^{-4}$ y $3/16 = 2^{-3} + 2^{-4}$, **4 bits de estimación representan ambos valores sin error de truncamiento** (en decimal serían `1` y `3` en el registro de estimación).
+
+### Dos cosas para revisar en tu código si no te da `1` y `3`
+
+* **El factor de $1/2$ en $R_z$:** Si en tu modelo teórico o de prueba pensaste que $R_z(\theta)$ aplica fase $\theta$ en vez de $\theta/2$, entonces $\pi/4$ correspondería a $\varphi = 1/8$ (3 bits) y $3\pi/4$ a $\varphi = 3/8$ (que en 4 bits sería $6/16$, no $3/16$).
+* **El signo de la fase y el orden de los bits:** Dependiendo de si tu `qpe` usa $U$ o $U^\dagger$ (o el signo en la QFT inversa), el estado estimado puede salir como el complemento a $2^n$ (por ejemplo, $16 - 1 = 15$ o $16 - 3 = 13$ en 4 bits) o con el orden de bits invertido respecto a lo que esperás imprimir.
+
+¿Qué valores enteros o binarios te está devolviendo actualmente al correr `Rz(pi/4)` y `Rz(3pi/4)` con 4 bits?

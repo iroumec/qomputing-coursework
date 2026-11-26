@@ -1,7 +1,7 @@
 # Configuración global de Quarto para los informes en reports/
 lang: es
-cursada: "Cursada 2025"
-materia: "Fundamentos de la Computación Cuántica"
+cursada: "Cursada 2026"
+materia: "Algoritmos Avanzados de Computación Cuántica"
 
 # Logos institucionales y estética de portada
 logo-left: "assets/logos/unicen-logo.png"

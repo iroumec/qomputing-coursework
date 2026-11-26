@@ -1,7 +1,7 @@
 ---
-title: "Algoritmos Cuánticos Avanzados"
+title: "Trabajo de Cursada"
 subtitle: "Estimación de Fase Cuántica (QPE) y Búsqueda de Grover"
-running-header: "Fundamentos de la Computación Cuántica"
+running-header: "Algoritmos Avanzados de Computación Cuántica"
 ---
 
 # Introducción
@@ -9,6 +9,8 @@ running-header: "Fundamentos de la Computación Cuántica"
 A lo largo de este informe, se presentan el desarrollo, el análisis teórico y los resultados experimentales correspondientes a la resolución de los trabajos prácticos de **Estimación de Fase Cuántica** (_Quantum Phase Estimation_, QPE) y **Búsqueda de Grover** (_Grover's Algorithm_), dictados en el curso.
 
 Para la implementación y simulación de los circuitos cuánticos se utilizó el _framework_ `Qiskit`, junto al lenguaje de programación Python. Si desea acceder al código fuente completo y a las _notebooks_ interactivas (`practicos/qpe.ipynb` y `practicos/grover.ipynb`), estos pueden hallarse en el repositorio de GitHub del proyecto: [https://github.com/iroumec/Quantum-Computing](https://github.com/iroumec/Quantum-Computing).
+
+{{< pagebreak >}}
 
 # Estimación de Fase Cuántica (QPE)
 
@@ -22,7 +24,21 @@ El circuito utiliza dos registros cuánticos: un registro de **estimación** com
 
 ![Representación conceptual del espectro de fases y descomposición en frecuencias.](assets/qpe.png){#fig-qpe-portada width=80%}
 
-## Ejercicio 1: Operadores de Rotación y Precisión ($t$ y $m$)
+## Paso Previo: QFT
+
+Previo a implementar el QPE, es necesario implementar la transformada cuántica de Fourier inversa. Esto se debe a que QPE hace uso de ella.
+
+Para su implementación, se tomó la resolución de la cursada de la materia previa "Fundamentos de la Computación Cuántica".
+
+![Circuito de la Transformada Inversa Cuántica de Fourier para 4 qubits.](assets/iqft4.png){#fig-qft4 width=95%}
+
+## Circuitos
+
+Posteriormente, se implementó una función que, dado un operador unitario, construya su QPE correspondiente. A continuación, se presentan los circuitos resultantes para los operadores unitarios descritos en el inciso i del ejercicio.
+
+## Ejercicio 1
+
+La consigna del ejercicio es la siguiente:
 
 > Implementar el algoritmo QPE visto en el curso considerando diferentes operadores unitarios de rotación $U$ y diferentes cantidades de qubits objetivo ($m$) y qubits de estimación ($t$):  
 > i. $U \in \{Z, S, T, R_z(\pi), R_z(\pi/2), R_z(\pi/4), R_z(3\pi/4)\}$ con $m = 1$ y $t = 4$.  
@@ -30,18 +46,84 @@ El circuito utiliza dos registros cuánticos: un registro de **estimación** com
 > iii. Inciso i) con $t = 6$.  
 > iv. $U \in \{R_z(-\pi/4), R_z(-3\pi/4)\}$ con $m = 1$ y $t = 4$.
 
-### Transformada Cuántica de Fourier Inversa ($\text{QFT}^{-1}$)
+### Inciso i)
 
-Como bloque fundamental previo a la medición del registro de estimación, se implementó la transformada inversa (`iqft`) reutilizando la lógica de rotaciones de fase controladas `cp` de ángulos $-\pi/2^j$ seguidas de compuertas de Hadamard y operaciones `swap` para invertir el orden de los qubits:
+Utilizando las funciones construidas anteriormente, se realizó la implementación del algoritmo QPE considerando los operadores unitarios mostrados y $m=1$ y $t=4$.
 
-![Circuito correspondiente a la Transformada Cuántica de Fourier Inversa para 4 qubits.](assets/iqft4.png){#fig-iqft4 width=95%}
+Todos los operadores unitarios utilizados son diagonales en la base computacional $\{\vert{}0\rangle, \vert{}1\rangle\}$. Por lo tanto, tanto $\vert{}0\rangle$ como $\vert{}1\rangle$ son autovectores de $U$ para un qubit y funcionan como entrada válida del circuito.
 
-### Análisis de Resultados por Inciso
+A continuación, se presentan los circuitos implementados:
 
-- **Inciso i ($m=1, t=4$):** Al preparar el qubit objetivo en $|1\rangle$, los operadores $Z$, $S$ y $T$ presentan fases exactas $\theta = 1/2$, $1/4$ y $1/8$, las cuales pueden representarse exactamente con $t=4$ bits en binario ($1000_2$, $0100_2$ y $0010_2$, respectivamente), colapsando con probabilidad del $100\,\%$ en un único estado. En cambio, para rotaciones como $R_z(\pi/4)$ o $R_z(3\pi/4)$, cuya fase asociada sobre $|1\rangle$ es $\theta = 1/16$ o $3/16$, la representación de 4 bits alcanza el límite de resolución o se distribuye entre los estados adyacentes cuando la fase no es un múltiplo exacto de $1/2^t$.
-- **Inciso ii ($m=2, t=4$):** Al aplicar el operador sobre múltiples qubits objetivo en $|11\rangle$, las fases individuales se suman debido a la estructura de producto tensorial ($U \otimes U$), duplicando la fase efectiva acumulada en el _phase kickback_.
-- **Inciso iii ($t=6$):** Incrementar el registro de estimación a $t=6$ qubits cuadruplica la resolución de la grilla ($\Delta\theta = 1/64$), permitiendo representar de forma exacta fases que en $t=4$ quedaban truncadas.
-- **Inciso iv (Ángulos negativos):** Debido a la periodicidad modular de la fase compleja ($e^{-2\pi i |\theta|} = e^{2\pi i (1 - |\theta|)}$), los ángulos negativos se mapean al complemento $1 - |\theta| \pmod 1$.
+![](assets/qpe-1i-circuitos.png)
+
+Los resultados obtenidos de la evaluación de los anteriores circuitos se muestran a continuación:
+
+![](assets/qpe-1i-resultados.png)
+
+Como puede observarse, al preparar el qubit objetivo en $|1\rangle$, los operadores $Z$, $S$ y $T$ presentan fases exactas $\theta = 1/2$, $1/4$ y $1/8$, las cuales pueden representarse exactamente con $t=4$ bits en binario ($1000_2$, $0100_2$ y $0010_2$, respectivamente), colapsando con probabilidad del $100\,\%$ en un único estado. Lo mismo sucede para las rotaciones $R_z(\pi/4)$ y $R_z(3\pi/4)$, cuya fase asociada sobre $|1\rangle$ es $\theta = 1/16$ y $3/16$, respectivamente. La representación de 4 bits es suficiente ya que la fase es un múltiplo exacto de $1/2^t$.
+
+### Inciso ii)
+
+Mismas instrucciones que para el inciso i), pero utilizando $m = 2$ en lugar de $m = 1$. A continuación, se presentan las implementaciones de los circuitos:
+
+A continuación, se presentan los resultados.
+
+![](assets/qpe-1ii-c.png)
+
+Cuando $m = 2$, el espacio objetivo es de dos qubits y el operador total actúa como un producto tensorial de operadores diagonales sobre cada qubit. Como cada estado de la base computacional de 2 qubits es un producto tensorial de autovectores de un solo qubit (por ejemplo, $\vert{}01\rangle = \vert{}0\rangle \otimes \vert{}1\rangle$), cada uno de los cuatro estados ($\vert{}00\rangle, \vert{}01\rangle, \vert{}10\rangle, \vert{}11\rangle$) es también un autovector del operador conjunto sobre los $m$ qubits objetivo y estos autovectores funcionan como entrada válida del circuito. Se aclara esto porque, de no cumplir los operadores unitarios esta propiedad, sería necesario observar mediante un histograma los valores de $\theta$ obtenidos para distintos shots del circuito. De observarse que no siempre se elige un mismo valor, sería un indicio de que dicho autoestado enviado como entrada al circuito mediante los qubits objetivo no es un autovector del operador y, por consiguiente, no es válido aplicarle el algoritmo.
+
+Al aplicar el operador sobre múltiples qubits objetivo en $|11\rangle$, las fases individuales se suman debido a la estructura de producto tensorial ($U \otimes U$), duplicando la fase efectiva acumulada en el _phase kickback_.
+
+### Inciso iii)
+
+Mismas instrucciones que para el inciso i), pero modificando el valor de $t$ de $t = 4$ a $t = 6$.
+
+![](assets/qpe-1iii-circuitos.png)
+
+Incrementar el registro de estimación a $t=6$ qubits cuadruplica la resolución de la grilla ($\Delta\theta = 1/64$), permitiendo representar de forma exacta fases que en $t=4$ quedaban truncadas. No obstante, en el práctico, todas las fases obtenidas pueden representarse con 4 bits de estimación. Por consiguiente, como puede observarse, el resultado no varía con respecto al inciso i). Los últimos qubits de estimación añadidos no son utilizados. Estos qubits no mejoran la aproximación, pues esta ya es precisa. El incremento de los bits de estimación ($t$) de 4 a 6 no presenta una mejora en la precisión del valor de $\theta$ buscado.
+
+### Inciso iv)
+
+El inciso pide, utilizando $m = 1$ y $t = 4$, probar la implementación para un nuevo conjunto de operadores unitarios:
+
+- $U = Rz(-𝝅/4)$; y
+- $U = Rz(-3𝝅/4)$.
+
+Los operadores unitarios presentados anteriormente se caracterizan por tener ángulos negativos. A continuación, se presenta la implementación de sus circuitos:
+
+![Implementación del algoritmo QPE para los operadores unitarios Rz(-𝝅/4) y Rz(-3𝝅/4).](assets/qpe-1iv-circuitos.png)
+
+Estos operadores, al igual que los utilizados en el inciso i), son diagonales en la base computacional y, por lo tanto, las entradas $\vert{}0\rangle$ y $\vert{}1\rangle$ son entradas válidas entrada válido del c
+
+![Tabla con los resultados de la simulación de los circuitos correspondientes a los operadores unitatios Rz(-𝝅/4) y Rz(-3𝝅/4).](assets/qpe-1iv-resultados.png)
+
+Debido a la periodicidad modular de la fase compleja ($e^{-2\pi i |\theta|} = e^{2\pi i (1 - |\theta|)}$), los ángulos negativos se mapean al complemento $1 - |\theta| \pmod 1$.
+
+## Ejercicio 2
+
+Este ejercicio pide analizar, para el ejercicio 1.i), el impacto de la fase global de los autovalores. Para ello, se deicdió comparar el circuito con los operadores unitarios de rotación $Z$ y $Rz(\pi)$. Esto se debe a que estos operadores, presentes en el ejercicio 1.i), solo se diferencian entre sí en su fase global.
+
+A continuación, se recuerda la implementación del circuito para ambos operadores unitarios:
+
+![](assets/qpe-2-circuitos.png)
+
+A continuación, se muestran los resultados obtenidos:
+
+![](assets/qpe-2-resultados.png)
+
+Ambos operadores de rotación realizan una rotación $\pi$ sobre el eje Z. No obstante, $Rz(\pi)$ difiere de $Z$ en una fase global:
+
+$$
+Rz(\pi) = \begin{pmatrix} e^{-i\pi/2} & 0 \\ 0 & e^{i\pi/2} \end{pmatrix} = \begin{pmatrix} -i & 0 \\ 0 & i \end{pmatrix} = -i\,Z
+$$
+
+Si estas compuertas se aplicaran a un qubit y se realizara la medición, las probabilidades observadas serían las mismas para cualquier estado, ya que una fase global no es observable. Sin embargo, como se observa en la tabla anterior, esto no se cumple en el circuito QPE.
+
+Los autovalores de $Z$ son $1$ y $-1$, mientras que los de $Rz(\pi)$ son $-i$ y $i$. Es decir, la fase global $e^{-i\pi/2}$ multiplica ambos autovalores, lo que desplaza las dos fases estimadas en $-0.25$ (módulo 1). La diferencia entre las fases de $\lvert 0 \rangle$ y $\lvert 1 \rangle$ se mantiene en $0.5$.
+
+Esto ocurre porque el QPE utiliza el operador controlado. Cuando el qubit de control está en $\lvert 1 \rangle$, se aplica $U$ al objetivo, y cuando está en $\lvert 0 \rangle$, no se aplica nada. Por lo tanto, la fase global de $U$ deja de ser global y pasa a ser una fase relativa entre $\lvert 0 \rangle$ y $\lvert 1 \rangle$ del qubit de control (_phase kickback_), que es justamente lo que el QPE estima.
+
+En conclusión, la fase global no afecta las probabilidades de medición de un estado, pero sí la fase estimada por el QPE, por lo que el operador debe especificarse con su fase global incluida.
 
 {{< pagebreak >}}
 
@@ -92,12 +174,40 @@ $$r = \left\lfloor \frac{\pi}{4}\sqrt{\frac{8}{2}} \right\rfloor = \left\lfloor 
 
 Con una única iteración del operador de Grover, el ángulo de rotación inicial $\theta = \arcsin(\sqrt{2/8}) = \pi/6$ ($30^\circ$) se triplica a $3\theta = \pi/2$ ($90^\circ$), alcanzando una probabilidad teórica del $100\,\%$ repartida equitativamente ($50\,\%$ en $|001\rangle$ y $50\,\%$ en $|110\rangle$).
 
+{{< pagebreak >}}
+
 # Conclusiones
 
 A lo largo del desarrollo de estos trabajos prácticos, se profundizó en dos de los algoritmos más emblemáticos de la computación cuántica: la Estimación de Fase Cuántica (QPE) y la búsqueda de Grover. Su implementación en Qiskit permitió verificar empíricamente fenómenos puramente cuánticos como el _phase kickback_, la interferencia constructiva y destructiva de amplitudes, y el carácter periódico de las rotaciones en el subespacio de Hilbert.
 
-# Referencias
+{{< pagebreak >}}
+
+# Transparencia
+
+Se utilizó IA generativa (en particular, Claude Code y DeepSeek) para:
+
+- profundizar sobre algunos conceptos (por ejemplo, _phase kickback_);
+- generar el código encargado de generar las tablas utilizadas en el práctico de QPE;
+- generar el código encargado de agrupar los distintos circuitos y evaluaciones en un único mosaico, tanto en el práctico de QPE y el de Grover; y
+- realizar una revisión general de los prácticos y del informe en busca de _bugs_ que hayan pasado desapercibidos en el código y errores ortográficos en las redacciones.
+
+El resto de la resolución, tanto en lo que respecta a las _notebooks_ como al informe, en cuanto código, conclusiones y redacción, son propias.
+
+{{< pagebreak >}}
+
+# Referencias y Recursos
+
+[1] Materiales de la Cursada.
+
+[2] https://www.youtube.com/watch?v=BeXcnjBtEto
 
 [1] M. A. Nielsen and I. L. Chuang, _Quantum Computation and Quantum Information: 10th Anniversary Edition_, Cambridge University Press, 2010.
 
 [2] “Phase Estimation and Grover's Algorithm — Qiskit Documentation”, IBM Quantum, [Online]. Disponible en: [https://quantum.cloud.ibm.com/docs/es](https://quantum.cloud.ibm.com/docs/es) (consultado: nov. 2026).
+
+[3] https://en.wikipedia.org/wiki/Phase_kickback
+
+[4] https://es.wikipedia.org/wiki/Algoritmo_cu%C3%A1ntico_de_estimaci%C3%B3n_de_fase
+
+[5] https://es.wikipedia.org/wiki/Algoritmo_de_Grover
+

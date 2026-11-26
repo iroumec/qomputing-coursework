@@ -1,0 +1,167 @@
+La **periodicidad modular** es la propiedad que tiene una función exponencial modular de repetirse de forma regular a medida que crece el exponente. En computación cuántica es el corazón del **algoritmo de Shor** para factorizar enteros, y se conecta directamente con la estimación de fase cuántica (QPE) que venías trabajando.
+
+---
+
+## 1. ¿Qué es exactamente?
+
+Dados dos enteros positivos $a$ y $N$ con $\gcd(a, N) = 1$ (coprimos), consideramos la función:
+
+$$f(x) = a^x \bmod N \quad \text{para } x = 0, 1, 2, \dots$$
+
+Como el resto módulo $N$ solo puede tomar valores entre $0$ y $N - 1$, tarde o temprano los resultados se repiten. Al ser $a$ coprimo con $N$, la secuencia entra en un ciclo puro desde el principio: existe un entero positivo más pequeño $r \ge 1$ —llamado **orden multiplicativo** de $a$ módulo $N$— tal que:
+
+$$a^r \equiv 1 \pmod N$$
+
+A partir de ahí, para cualquier entero $x$:
+
+$$f(x + r) = a^{x + r} \bmod N = (a^x \cdot a^r) \bmod N = (a^x \cdot 1) \bmod N = f(x)$$
+
+Es decir, **$r$ es el período** de $f(x)$.
+
+### Un ejemplo concreto
+
+Tomemos $a = 2$ y $N = 15$ (que cumplen $\gcd(2, 15) = 1$):
+
+| $x$ | $0$ | $1$ | $2$ | $3$ | $4$ | $5$ | $6$ | $7$ |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| $2^x \bmod 15$ | $1$ | $2$ | $4$ | $8$ | $1$ | $2$ | $4$ | $8$ |
+
+La secuencia $(1, 2, 4, 8)$ se repite cada **$r = 4$** pasos.
+
+---
+
+## 2. ¿Por qué importa para factorizar (algoritmo de Shor)?
+
+Si encontramos un período $r$ **par** tal que $a^{r/2} \not\equiv -1 \pmod N$, podemos factorizar $N$ usando aritmética clásica:
+
+1. Como $r$ es par, escribimos:
+
+$$a^r - 1 = \left(a^{r/2} - 1\right)\left(a^{r/2} + 1\right) \equiv 0 \pmod N$$
+
+
+2. Esto significa que $N$ divide al producto $\left(a^{r/2} - 1\right)\left(a^{r/2} + 1\right)$.
+3. Si $N$ no divide a ninguno de los dos factores por separado (lo cual ocurre con alta probabilidad para una elección aleatoria de $a$), entonces cada factor comparte factores no triviales con $N$.
+4. Calculando $\gcd\!\left(a^{r/2} - 1, N\right)$ y $\gcd\!\left(a^{r/2} + 1, N\right)$ con el algoritmo de Euclides, obtenemos divisores no triviales de $N$.
+
+En el ejemplo anterior ($a = 2, N = 15, r = 4$):
+
+* $r = 4$ es par y $2^{4/2} = 4 \not\equiv -1 \pmod{15}$.
+* $\gcd(4 - 1, 15) = \gcd(3, 15) = 3$.
+* $\gcd(4 + 1, 15) = \gcd(5, 15) = 5$.
+* ¡Listo! $15 = 3 \times 5$.
+
+---
+
+## 3. ¿Cómo entra la computación cuántica?
+
+En una computadora clásica, encontrar el período $r$ de $a^x \bmod N$ cuando $N$ es grande es costoso (no se conoce un algoritmo clásico eficiente en tiempo polinómico en el número de bits de $N$).
+
+En el enfoque cuántico (básicamente **QPE aplicado a un operador de multiplicación modular**):
+
+* Se define un operador unitario $U_a$ sobre el registro objetivo que actúa como:
+
+$$U_a \vert{}y\rangle = \vert{}ay \bmod N\rangle$$
+
+
+
+(para los estados $\vert{}y\rangle$ con $0 \le y < N$, completando como identidad en el resto del espacio si hace falta).
+* Los autovalores de $U_a$ son raíces $r$-ésimas de la unidad: $e^{2\pi i k / r}$ para $k = 0, 1, \dots, r - 1$.
+* Con **QPE** se estima una fase cercana a $\frac{k}{r}$.
+* Aplicando **fracciones continuas** sobre la estimación obtenida, se recupera el denominador $r$.
+
+---
+
+## 4. Detalles y sutilezas importantes
+
+* **El período $r$ no siempre es potencia de $2$:** A diferencia de una fase como $1/16$ o $3/16$ que cabe exacta en 4 bits, un período $r$ arbitrario (por ejemplo $r = 6$ o $r = 7$) no divide a $2^n$. Por eso en QPE suele aparecer un pequeño error de redondeo y se usa fracciones continuas para extraer $r$ a partir de $\tilde{\varphi} \approx k/r$.
+* **Puede tocar $k = 0$ o un factor común entre $k$ y $r$:** Si al medir sale $k = 0$, la fase es $0$ y no da información del período; si $\gcd(k, r) > 1$, fracciones continuas devuelve un divisor de $r$, por lo que a veces se repite el circuito o se combinan candidatos.
+* **Implementar $U_a$ controlada en circuitos cuánticos es lo más costoso:** En comparación con las rotaciones $Rz$ de un solo qubit, construir la multiplicación modular reversible y controlada requiere más qubits ancilla y compuertas aritméticas cuánticas.
+
+¿Te interesa profundizar más en la parte matemática de fracciones continuas o en cómo se construye el operador $U_a$ en un circuito cuántico?
+
+Para ver la periodicidad modular **directamente dentro de QPE**, conviene mirar cómo encaja con la estructura de estimación de fase que ya conocés: un **registro de estimación** de $n$ qubits y un **registro objetivo** (o *target*) sobre el que actúa un operador unitario $U_a$.
+
+A diferencia de tus pruebas anteriores —donde $U$ era diagonal en la base computacional y los estados $\vert{}0\rangle, \vert{}1\rangle$ ya eran autovectores—, acá el operador es la **multiplicación modular** y sus autovectores son superposiciones construidas a partir de la órbita periódica.
+
+---
+
+## 1. El operador unitario y sus autovectores
+
+Fijemos $a$ y $N$ con $\gcd(a, N) = 1$, y sea $r$ el período de $a^x \bmod N$. Definimos el operador de multiplicación modular $U_a$ sobre el registro objetivo (con suficientes qubits para representar números hasta $N - 1$):
+
+$$U_a \vert{}y\rangle = \vert{}ay \bmod N\rangle$$
+
+Como multiplicar por un número coprimo módulo $N$ permuta los elementos de la órbita de forma reversible, $U_a$ es **unitario**.
+
+### ¿Cuáles son sus autovectores?
+
+Partamos de $\vert{}1\rangle$. Al aplicar $U_a$ repetidamente generamos el ciclo de longitud $r$:
+
+$$\vert{}1\rangle \to \vert{}a\rangle \to \vert{}a^2 \bmod N\rangle \to \dots \to \vert{}a^{r-1} \bmod N\rangle \to \vert{}1\rangle$$
+
+A partir de esta órbita, para cada $k \in \{0, 1, \dots, r-1\}$ podemos definir el estado:
+
+$$\vert{}u_k\rangle = \frac{1}{\sqrt{r}} \sum_{s=0}^{r-1} e^{-2\pi i \frac{k s}{r}} \left\vert{}a^s \bmod N\right\rangle$$
+
+Si aplicamos $U_a$ a $\vert{}u_k\rangle$:
+
+$$U_a \vert{}u_k\rangle = \frac{1}{\sqrt{r}} \sum_{s=0}^{r-1} e^{-2\pi i \frac{k s}{r}} \left\vert{}a^{s+1} \bmod N\right\rangle = e^{2\pi i \frac{k}{r}} \vert{}u_k\rangle$$
+
+(usando que $e^{-2\pi i \frac{k r}{r}} = 1$, ya que $U_a^r \vert{}1\rangle = \vert{}1\rangle$).
+
+Por lo tanto, cada $\vert{}u_k\rangle$ es un **autovector de $U_a$** con autovalor:
+
+$$\lambda_k = e^{2\pi i \frac{k}{r}} \implies \text{fase } \varphi_k = \frac{k}{r}$$
+
+---
+
+## 2. Cómo actúa QPE paso a paso
+
+En QPE estándar, tenemos:
+
+* **Registro 1 (estimación):** $n$ qubits inicializados en $\vert{}0\rangle^{\otimes n}$.
+* **Registro 2 (objetivo):** preparado en uno de los autovectores $\vert{}u_k\rangle$.
+
+1. **Superposición en estimación:** Aplicamos Hadamard ($H$) a los $n$ qubits de estimación, dejando:
+
+$$\frac{1}{\sqrt{2^n}} \sum_{x=0}^{2^n - 1} \vert{}x\rangle \otimes \vert{}u_k\rangle$$
+
+
+2. **Potencias controladas de $U_a$:** El $j$-ésimo qubit de control aplica $U_a^{2^j}$ sobre el registro objetivo. Como $\vert{}u_k\rangle$ es autovector de $U_a$ con autovalor $e^{2\pi i (k/r)}$, aplicar $U_a^x$ introduce la fase global $e^{2\pi i x (k/r)}$ sobre el término $\vert{}x\rangle$:
+
+$$\frac{1}{\sqrt{2^n}} \sum_{x=0}^{2^n - 1} e^{2\pi i \frac{k}{r} x} \vert{}x\rangle \otimes \vert{}u_k\rangle$$
+
+
+3. **QFT inversa:** Al aplicar $\text{QFT}^\dagger$ al registro de estimación, la interferencia concentra la amplitud alrededor del valor entero más cercano a $2^n \cdot \frac{k}{r}$ (si $k/r$ es exacto en $n$ bits, cae exactamente en $2^n k / r$).
+4. **Medición:** Al medir el registro de estimación obtenemos un entero $m \in \{0, \dots, 2^n - 1\}$, que nos da la fase estimada:
+
+$$\tilde{\varphi} = \frac{m}{2^n} \approx \frac{k}{r}$$
+
+
+
+---
+
+## 3. El truco clave: no hace falta preparar $\vert{}u_k\rangle$ a mano
+
+Si tuvieras que construir $\vert{}u_k\rangle$ explícitamente, ya necesitarías conocer $r$ de antemano —lo cual sería circular si justamente querés hallar $r$.
+
+La magia en QPE es que la suma de todos los autovectores $\vert{}u_k\rangle$ con pesos uniformes reconstruye exactamente el estado base $\vert{}1\rangle$:
+
+$$\frac{1}{\sqrt{r}} \sum_{k=0}^{r-1} \vert{}u_k\rangle = \vert{}1\rangle$$
+
+(por ortogonalidad de las raíces $r$-ésimas de la unidad).
+
+Eso significa que en QPE podés inicializar el registro objetivo simplemente en **$\vert{}1\rangle$** (un estado trivial de preparar). Al ser $\vert{}1\rangle$ una superposición uniforme de los $\vert{}u_k\rangle$, el circuito evoluciona en paralelo sobre cada componente $\vert{}u_k\rangle$: al medir el registro de estimación, colapsa y devuelve una estimación de $\frac{k}{r}$ para **alguno** de los $k \in \{0, 1, \dots, r-1\}$ elegido uniformemente al azar.
+
+---
+
+## 4. Comparación rápida con tu QPE de rotaciones $Rz$
+
+| Aspecto | QPE con $Rz(\theta)$ (tu caso previo) | QPE con multiplicación modular $U_a$ |
+| --- | --- | --- |
+| **Operador $U$** | Diagonal en $\{\vert{}0\rangle, \vert{}1\rangle\}$ | Permuta estados $\{\vert{}y\rangle \to \vert{}ay \bmod N\rangle\}$ |
+| **Autovectores** | $\vert{}0\rangle, \vert{}1\rangle$ (y productos tensoriales) | Superposiciones $\vert{}u_k\rangle$ sobre la órbita de $a^s \bmod N$ |
+| **Fase $\varphi$** | Proporcional al ángulo (ej. $\theta / (2\pi)$ o $\theta / (4\pi)$) | Fracción $k / r$, donde $r$ es el período modular |
+| **Post-proceso** | Leer bits / decimal directamente | Usar **fracciones continuas** para deducir $r$ desde $\tilde{\varphi} \approx k/r$ |
+
+¿Querés que hagamos un ejemplo numérico chico con QPE (por ejemplo $a = 2, N = 15$, donde $r = 4$) para ver qué fases $k/4$ aparecen según $k$?

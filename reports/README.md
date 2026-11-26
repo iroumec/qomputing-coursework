@@ -61,6 +61,16 @@ make report REPORT=reports/qft/informe.qmd
 
 - **Se copian:** `_shared/_template/` (Quarto exige que la plantilla Typst viva dentro del proyecto del informe, porque Typst no puede leer fuera de su raíz) y los logos. `make report-sync` los actualiza; `_quarto.yml` e `informe.qmd` nunca se tocan.
 
+- **Cambiar un logo:** reemplazá el archivo en `_shared/assets/logos/` y corré `make report-sync REPORT=` para propagarlo a todos los informes. Los logos se sobrescriben en cada sincronización, a diferencia de `_quarto.yml`. Los que usa la plantilla son `unicen-logo.png` (arriba a la izquierda), `exa-logo.png` (arriba a la derecha y encabezados), `qc-logo-cover.png` (ilustración de la portada) y `quantum-banner.png` (franjas superior e inferior).
+
+- **Logo de portada desde `images/`:** el logo del curso se importa con
+
+  ```bash
+  make logos
+  ```
+
+  Toma `images/logo-no-background.png`, le recorta el margen transparente y lo guarda como `_shared/assets/logos/qc-logo-cover.png`, propagándolo a todos los informes. Para usar otra imagen: `make logos SOURCE=images/otro-logo.png`.
+
 ## Crear un informe nuevo
 
 ```bash

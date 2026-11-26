@@ -1,8 +1,9 @@
 PY := .venv/bin/python
 REPORT ?= reports/qpe-grover/informe.qmd
+SOURCE ?= images/logo-no-background.png
 REPORTS_PY := reports/_scripts/reports.py
 
-.PHONY: create-env freeze figures report reports report-new report-sync reports-list quarto-render quarto-preview
+.PHONY: create-env freeze figures report reports report-new report-sync reports-list logos quarto-render quarto-preview
 
 create-env:
 	python3 -m venv .venv
@@ -19,6 +20,10 @@ freeze:
 # make reports-list  Lista informes, notebooks y cantidad de figuras.
 figures:
 	$(PY) $(REPORTS_PY) figures $(REPORT)
+
+# Importa el logo de portada desde images/ y lo propaga a los informes.
+logos:
+	$(PY) $(REPORTS_PY) logos --source "$(SOURCE)"
 
 report: figures
 	quarto render $(REPORT)

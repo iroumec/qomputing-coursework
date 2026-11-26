@@ -32,6 +32,11 @@ sync [INFORME ...]
     Actualiza la plantilla y los logos de cada informe con lo que haya en
     `reports/_shared/`. No toca `_quarto.yml` ni `informe.qmd`.
 
+logos [--source RUTA] [--name NOMBRE]
+    Recorta el logo indicado (por defecto `images/logo-no-background.png`),
+    lo guarda como logo de portada en `_shared/assets/logos/` y lo propaga
+    a todos los informes.
+
 list
     Lista los informes, sus notebooks y las figuras extraídas.
 
@@ -171,7 +176,7 @@ def sync_report(report_dir: Path) -> list[Path]:
     changed += copy_tree(
         SHARED / "_template", report_dir / "_template", exclude=("*.template",)
     )
-    changed += copy_tree(SHARED / "assets" / "logos", report_dir / "assets" / "logos", only_missing=True)
+    changed += copy_tree(SHARED / "assets" / "logos", report_dir / "assets" / "logos")
     for name in (".gitignore",):
         source = SHARED / name
         destination = report_dir / name
@@ -234,6 +239,38 @@ def sync_reports(args) -> None:
         changed = sync_report(report_dir)
         detail = f"{len(changed)} archivo(s) actualizado(s)" if changed else "sin cambios"
         print(f"= {rel(report_dir)}: {detail}")
+
+
+def import_logo(source: Path, name: str, margin: float = 0.02) -> Path:
+    """Recorta un logo con transparencia y lo deja en `_shared/assets/logos/`."""
+    try:
+        from PIL import Image
+    except ImportError:  # pragma: no cover
+        sys.exit("Falta Pillow: .venv/bin/pip install pillow")
+
+    if not source.is_file():
+        sys.exit(f"No existe el logo {source}")
+
+    image = Image.open(source).convert("RGBA")
+    bbox = image.getbbox()
+    if bbox:
+        image = image.crop(bbox)
+
+    pad = int(max(image.size) * margin)
+    canvas = Image.new("RGBA", (image.width + 2 * pad, image.height + 2 * pad), (0, 0, 0, 0))
+    canvas.paste(image, (pad, pad))
+
+    target = SHARED / "assets" / "logos" / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    canvas.save(target)
+
+    # Propaga el logo a todos los informes.
+    for report_dir in report_dirs():
+        sync_report(report_dir)
+
+    print(f"+ Logo importado: {rel(target)} ({canvas.width}×{canvas.height})")
+    print("  Sincronizado en: " + ", ".join(rel(d) for d in report_dirs()))
+    return target
 
 
 # --------------------------------------------------------------------------- #
@@ -544,8 +581,20 @@ def main() -> None:
     new.add_argument("--running-header", default="")
     new.add_argument("--notebook", action="append", default=[], help="Repetible")
 
-    sync = sub.add_parser("sync", help="Actualiza plantilla, parciales y logos")
+    sync = sub.add_parser("sync", help="Actualiza plantilla y logos")
     sync.add_argument("reports", nargs="*", help="Carpetas de informe (por defecto: todas)")
+
+    logos = sub.add_parser("logos", help="Importa y propaga el logo de portada")
+    logos.add_argument(
+        "--source",
+        default="images/logo-no-background.png",
+        help="Imagen de origen (por defecto: images/logo-no-background.png)",
+    )
+    logos.add_argument(
+        "--name",
+        default="qc-logo-cover.png",
+        help="Nombre del destino en _shared/assets/logos/",
+    )
 
     sub.add_parser("list", help="Lista informes y figuras")
 
@@ -560,6 +609,8 @@ def main() -> None:
         new_report(args)
     elif args.command == "sync":
         sync_reports(args.reports)
+    elif args.command == "logos":
+        import_logo(ROOT / args.source, args.name)
     else:
         list_reports()
 

@@ -1,0 +1,166 @@
+¿Por qué en los ejercicios 3 y 4 hay un qubit adicional debajo del todo que tiene una X y una hadamard0?
+
+Voy a leer el notebook para ver exactamente qué hacen esos ejercicios.
+
+Ese qubit extra no guarda el resultado. Se usa para convertir un oráculo que devuelve `f(x)` en un oráculo que cambia la fase, que es lo que Grover necesita. El resultado se lee de los qubits de búsqueda (por eso `measured_qubits=search_qubits`).
+
+**Por qué hace falta**
+
+Grover funciona porque el oráculo le cambia el signo (la fase) al estado buscado: |x⟩ → (−1)^f(x) |x⟩. Después, el difusor amplifica esa diferencia de signo.
+
+Las compuertas de los ejercicios 3 y 4 (`mcx`, un Toffoli generalizado) no hacen eso. Hacen un cambio de bit sobre el qubit objetivo:
+
+|x⟩|y⟩ → |x⟩|y ⊕ f(x)⟩
+
+**Qué pasaría con el qubit en |0⟩**
+
+El estado quedaría Σ|x⟩|f(x)⟩. El estado buscado tendría el ancilla en |1⟩ y todos los demás en |0⟩, y esos dos grupos son ortogonales entre sí. El difusor solo actúa sobre los qubits de búsqueda, así que no podría hacer interferir esas dos ramas. No habría amplificación y no se estaría marcando nada con fase.
+
+**Qué hace preparar el qubit en |−⟩**
+
+Con `x` y luego `h`, el qubit queda en |−⟩ = (|0⟩ − |1⟩)/√2. Aplicar X a |−⟩ da −|−⟩, o sea:
+
+- Si f(x) = 0, la X no se activa y el estado queda igual.
+- Si f(x) = 1, la X se activa y el estado queda multiplicado por −1.
+
+Entonces:
+
+|x⟩|−⟩ → (−1)^f(x) |x⟩|−⟩
+
+Es exactamente el cambio de fase que queríamos, y el qubit extra sale del oráculo igual que entró, en |−⟩, sin entrelazarse con nada. Es el mismo truco de phase kickback de Deutsch-Jozsa. Por eso se lo puede ignorar y no medir.
+
+**Por qué en el ejercicio 1 no se necesita**
+
+El oráculo ahí es una `CCZ`, que ya es una compuerta de fase: le cambia el signo directamente a |111⟩. En los ejercicios 3 y 4 el oráculo se armó con `mcx`, así que hace falta el ancilla en |−⟩.
+
+**Alternativa sin ancilla**
+
+Podrías reemplazar `mcx` por `mcp(np.pi, ...)` (un Z multicontrolado) y conjugar con X los qubits que deben valer 0, igual que ya haces con las X antes y después. Para el ejercicio 3 sería `x(2)`, `mcp(π, [0,1], 2)`, `x(2)`. El resultado es equivalente, con un qubit menos.
+
+Una observación sobre la redacción del notebook: dice que el qubit adicional sirve "para almacenar el resultado". Conviene cambiarlo por algo como "qubit auxiliar en |−⟩ para implementar el oráculo por phase kickback". Es probable que esa frase sea la que te generó la duda.
+
+==============================================================================================
+
+> ¿Es más eficiente esa alternativa a la ancilla? ¿Cómo quedaría la notebook sin ella?
+
+Voy a verificar con el propio Qiskit en vez de afirmarlo de memoria: comparo costos y que los resultados coincidan.
+
+Qiskit no está disponible en mi entorno (sin red), así que verifico la equivalencia matemática con NumPy puro.
+
+**Eficiencia**
+
+Debería ser más eficiente, aunque no pude medirlo: no tengo Qiskit en mi entorno y no hay red para instalarlo. Lo que sí es claro:
+
+- Se usa un qubit menos, así que el estado a simular pasa de 16 amplitudes a 8. En hardware real son menos qubits y menos ruteo.
+- En cada iteración, la compuerta pasa de ser una `mcx` de 3 controles (4 qubits) a una `mcp` de 2 controles (3 qubits). Es una compuerta más chica y debería descomponerse en menos CNOTs.
+- Preparar el ancilla (`x` + `h`) se hace una sola vez, así que no pesa en el costo por iteración. Lo que cambia es el tamaño de la compuerta multicontrolada.
+
+Para comprobarlo en tu notebook:
+
+```python
+for nombre, circ in [("con ancilla", grover(3, oraculo_3_ancilla)), ("sin ancilla", grover(3, oraculo_3))]:
+    print(nombre, transpile(circ, basis_gates=["cx", "u"], optimization_level=1).count_ops())
+```
+
+Lo que sí verifiqué, con NumPy, es que ambos oráculos son equivalentes. Las probabilidades sobre los qubits de búsqueda coinciden para las 9 iteraciones, tanto en el ejercicio 3 como en el 4.
+
+**Cómo quedaría la notebook**
+
+Solo cambian las celdas de los oráculos. `grover()` no se toca: calcula `ancillas = range(qubits, total_qubits)`, que con un oráculo de 3 qubits queda vacío y se saltea la preparación en |−⟩.
+
+Ejercicio 3, f = x2'·x1·x0, que marca |011⟩:
+
+```python
+search_qubits = 3
+
+oraculo_3 = QuantumCircuit(search_qubits)
+
+# Se niega x2 para que el control se active cuando vale 0.
+oraculo_3.x(2)
+
+# CCZ: cambia la fase del estado |111> (que ahora es el |011> original).
+oraculo_3.mcp(np.pi, [0, 1], 2)
+
+# Se restablece x2.
+oraculo_3.x(2)
+```
+
+Ejercicio 4, f = x2'·x1'·x0 + x2·x1·x0', que marca |001⟩ y |110⟩:
+
+```python
+search_qubits = 3
+
+oraculo_4 = QuantumCircuit(search_qubits)
+
+# PRIMER TÉRMINO: x2'x1'x0
+oraculo_4.x([1, 2])
+oraculo_4.mcp(np.pi, [0, 1], 2)
+oraculo_4.x([1, 2])
+
+# SEGUNDO TÉRMINO: x2x1x0'
+oraculo_4.x(0)
+oraculo_4.mcp(np.pi, [0, 1], 2)
+oraculo_4.x(0)
+```
+
+Los dos términos del ejercicio 4 marcan estados distintos, y como son operaciones diagonales conmutan entre sí, así que el orden no importa.
+
+Las llamadas `plot_variations_histograms(search_qubits, oraculo_3, variaciones, measured_qubits=search_qubits)` pueden quedar igual, o podés sacar `measured_qubits`, porque ahora todos los qubits son de búsqueda. Habría que reescribir los párrafos que hablan del qubit adicional en |−⟩ y del phase kickback. Los enlaces a Quirk quedarían como referencia de cómo se encontró el oráculo original.
+
+**Sobre "el número ideal de iteraciones"**
+
+Los números que salen del cálculo coinciden con lo que ves en tus histogramas. Pero el enunciado pide justificar, y hoy tu justificación es solo visual. La fórmula teórica es k ≈ ⌊(π/4)·√(N/M)⌋, con N = 8 y M el número de soluciones:
+
+- **Ejercicio 3** (M = 1): k = 2, con P(éxito) ≈ 94,5 %. Con 1 iteración es 78 %. Las 6 iteraciones dan ≈ 100 %, pero es una coincidencia numérica de la oscilación, no el óptimo.
+- **Ejercicio 4** (M = 2): k = 1, con P = 100 %. Por eso el patrón se repite cada 3 iteraciones: el ángulo de rotación por iteración es exactamente π/3.
+
+==============================================================================================================================================
+
+Voy a mirar la estructura del notebook para editar solo lo necesario y conservar tu estilo.
+
+Ya modifiqué el notebook y verifiqué que el JSON es válido; ahora te lo entrego y te explico lo del qubit adicional.
+
+Te dejé `grover.ipynb` con los cambios. Modifiqué 15 celdas, todas de los ejercicios 3 y 4:
+
+- Reescribí los dos oráculos con `mcp` (CCZ) sobre 3 qubits, y adapté los textos que hablaban del qubit adicional. `grover()` y todo lo demás quedó igual.
+- Conservé tus conclusiones y les agregué debajo un párrafo con la justificación teórica del número de iteraciones, que cierra con los gráficos que ya observabas.
+- Saqué los enlaces a Quirk de esos dos ejercicios, porque dibujaban el circuito con ancilla. Si querés, armamos enlaces nuevos para la versión de fase.
+- No pude ejecutar el notebook porque no tengo Qiskit acá, así que borré las salidas de las 8 celdas que dependían de los oráculos. Ejecutalo completo para regenerar circuitos e histogramas. La equivalencia de resultados sí la verifiqué con NumPy.
+
+**Por qué no hace falta el qubit adicional**
+
+Lo único que Grover le pide al oráculo es esto, sobre los qubits de búsqueda:
+
+O|x⟩ = (−1)^f(x) |x⟩
+
+Es decir, que le cambie el signo al estado buscado y deje los demás igual. Eso se puede lograr de dos maneras.
+
+1. **Con un oráculo "computacional"** (el que tenías). `mcx` calcula f(x) en un qubit de salida, y ese qubit se prepara en |−⟩ para que el bit-flip se convierta en un cambio de fase por phase kickback. El ancilla funciona como un adaptador: transforma una compuerta que cambia un bit en una que cambia una fase.
+2. **Con un oráculo de fase directo** (el nuevo). Se usa una compuerta que ya cambia el signo de un único estado, como la CCZ. Si el adaptador no hace falta, el ancilla tampoco.
+
+**Qué hace el ancilla en realidad**
+
+Se cumple que H·X·H = Z, así que una X multicontrolada es una Z multicontrolada con H antes y después sobre el qubit objetivo:
+
+mcx = (I ⊗ H) · mcz · (I ⊗ H)
+
+Al aplicarla sobre |x⟩|−⟩, la H inicial convierte el |−⟩ en |1⟩. Entonces la Z multicontrolada tiene su último qubit fijo en |1⟩, y un control fijo en |1⟩ es como si no estuviera. Te queda una CCZ sobre los qubits de búsqueda, y la H final devuelve el ancilla a |−⟩. El qubit extra nunca cambia ni se entrelaza con nada. Es un qubit fijo en |1⟩ visto desde otra base, y por eso lo podés sacar sin perder nada.
+
+**Comprobación con el ejercicio 3**
+
+La función vale 1 solo para x2x1x0 = 011.
+
+- **Para |011⟩:** la X sobre x2 lo convierte en |111⟩, la CCZ lo transforma en −|111⟩ y la X final lo devuelve como −|011⟩.
+- **Para cualquier otro estado:** después de la X sobre x2 no es |111⟩, así que la CCZ no hace nada y la X final lo restituye.
+
+El operador resultante es la identidad con un −1 en la posición 011, exactamente (−1)^f(x).
+
+**Por qué parecía necesario**
+
+El oráculo con ancilla sigue el esquema clásico de "calcular f(x) en un cable de salida". Un Toffoli necesita que el objetivo sea un qubit distinto de los controles, así que hay que reservar un cable extra. La compuerta Z es simétrica: no tiene un objetivo distinguido, porque el signo −1 depende de que todos los qubits valgan 1. Por eso no hace falta ningún cable de salida.
+
+Respecto de lo que pensabas al principio, tampoco en la versión con ancilla ese qubit guardaba el resultado. El valor de f(x) no queda almacenado en ningún lado, y el ancilla sale igual que entró. En ambas versiones f(x) queda codificada en el signo de la amplitud, y el difusor es el que lo convierte en una diferencia de probabilidades.
+
+**Cuándo sí vale la pena un ancilla**
+
+Cuando f solo está disponible como una subrutina que calcula un bit, como aritmética, comparaciones o un cálculo que usa bits auxiliares. Ahí construir directamente la fase no es práctico y el truco del |−⟩ sí sirve. Para funciones chicas como las tuyas, que tienen uno o dos minitérminos, es más simple marcar cada minitérmino con una CCZ y sus X.

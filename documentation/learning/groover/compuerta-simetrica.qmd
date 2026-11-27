@@ -1,0 +1,249 @@
+Cuando hablamos de que la compuerta $Z$ (o `CCZ` / `mcz`) es **simétrica**, nos referimos a que **todos los qubits que participan en ella cumplen exactamente el mismo rol**: no hay un qubit "de control" distinto de un qubit "objetivo" (o de salida).
+
+Veamos qué significa esto en la práctica y por qué aparecía ese qubit extra con `X` y `H` en los ejercicios 3 y 4.
+
+---
+
+## 1. ¿Qué significa que una compuerta sea "simétrica"?
+
+Compará dos compuertas multicontroladas:
+
+* **Compuerta asimétrica (`mcx` / Toffoli):** tiene un rol distinguido para el último qubit (el *target* o destino). Si los controles valen `1`, **invierte el bit** (`0 <-> 1`) solo en ese qubit objetivo; los qubits de control no cambian su estado computacional. Por eso, si querés calcular $f(x)$ sin destruir los bits de entrada $x$, necesitás un cable/qubit extra donde volcar el resultado.
+* **Compuerta simétrica (`Z`, `CCZ`, `mcz`):** no cambia ningún bit (`0` sigue siendo `0` y `1` sigue siendo `1`). Lo único que hace es **multiplicar la amplitud por $-1$ cuando todos los qubits involucrados están en $\vert{}1\rangle$**. Como la condición es *"todos en 1"*, podés permutar el orden de los qubits y la regla es idéntica: no hay un "cable de salida" separado.
+
+---
+
+## 2. ¿Por qué había un qubit adicional con `X` y `H` abajo de todo?
+
+En los ejercicios 3 y 4 el oráculo original se construyó usando una compuerta **`mcx`** (que es asimétrica y cambia un bit, no una fase):
+
+1. **La `mcx` necesita un qubit donde aplicar el bit-flip:** como `mcx` altera un qubit objetivo según $f(x)$, se ponía un qubit adicional abajo para que recibiera ese cambio.
+2. **Grover necesita un cambio de fase, no un cambio de bit:** para convertir ese *bit-flip* (`|y⟩ -> |y ⊕ f(x)⟩`) en un *cambio de signo* (`(-1)^{f(x)}`) sobre los qubits de búsqueda, se preparaba ese qubit extra en $\vert{}-\rangle$ aplicando `X` y luego `H` (el efecto de *phase kickback*).
+3. **Al final salía intacto:** como $\vert{}-\rangle$ es autovector de $X$ con autovalor $-1$, el qubit extra volvía a quedar en $\vert{}-\rangle$ sin entrelazarse con los demás, y por eso no se medía.
+
+---
+
+## 3. ¿Por qué podés prescindir de ese qubit extra?
+
+Porque el algoritmo de Grover **no necesita guardar $f(x)$ en ningún qubit**; solo necesita que el estado solución reciba un signo menos (`-1`) y los demás queden con signo `+1`.
+
+Si en vez de usar `mcx` + ancilla en $\vert{}-\rangle$ usás directamente una compuerta de fase simétrica como **`CCZ`** (o `mcp` con fase $\pi$, rodeada de `X` para los bits que deban valer `0`), el signo `-1` aparece **directamente** sobre los qubits de búsqueda, sin necesidad de un qubit auxiliar ni de `H`.
+
+---
+
+¿Te queda más claro con esa diferencia entre "compuerta que cambia un bit con qubit destino" y "compuerta simétrica que pone un `-1` cuando todos valen `1`"?
+
+================================================================================================================================
+
+Pero ¿cómo es qué podés cambiar el signo de todos ellos cuando hay qubits que funcionan como control nada más? Va... en ralidadn o hay contorl... ¿Por qué las dos compuertas se comportan distinto? Ambas son compuertas que se activan en detemrinado caso
+
+Tenés toda la razón en notar la contradicción de llamar "control" a un qubit en una compuerta $Z$ multicontrolada: **en `CCZ` o `mcz` en realidad no hay "controles" y "objetivos" distintos**, porque el efecto matemático no recae sobre un qubit en particular, sino sobre el **estado completo** de todos los qubits juntos.
+
+Ambas compuertas se activan bajo la misma condición —por ejemplo, cuando todos los qubits involucrados valen `1`—, pero **qué hacen al activarse** es distinto:
+
+### 1. Qué hace `CCX` (Toffoli / `mcx`): cambia un bit en un destino
+
+Supongamos 3 qubits: $q_0, q_1$ como controles y $q_2$ como objetivo (*target*).
+
+* **Condición de activación:** si $q_0 = 1$ y $q_1 = 1$, se activa.
+* **Qué ocurre:** **invierte el valor de $q_2$** (`0` pasa a `1`, o `1` pasa a `0`). $q_0$ y $q_1$ mantienen su valor.
+* **Ejemplo sobre $\vert{}110\rangle$:** $q_0=1$ y $q_1=1$ activan la compuerta, y el bit $q_2$ cambia de `0` a `1`, dando **`|111\rangle`**. En $\vert{}111\rangle$, cambia a **`|110\rangle`**.
+
+### 2. Qué hace `CCZ` (`mcz`): multiplica por `-1` al estado conjunto
+
+En `CCZ` sobre 3 qubits no hay un qubit "objetivo" al que darle la vuelta. La regla es:
+
+* **Condición de activación:** si el estado de los 3 qubits es **`|111\rangle`** (todos en `1`), se activa.
+* **Qué ocurre:** **no cambia ningún bit** (`111` sigue siendo `111`), sino que **multiplica toda la amplitud de ese estado por `-1**`.
+* **Por qué no hay "control vs. objetivo":** en mecánica cuántica, el signo `-1` (la fase) pertenece al estado de base $\vert{}111\rangle$ como un todo, no a un "cable" aislado. En la matriz diagonal de `CCZ`, la entrada correspondiente a $\vert{}111\rangle$ vale `-1` y las demás 7 entradas (`000` a `110`) valen `+1`.
+
+---
+
+### 3. ¿Cómo puede "cambiar el signo de todos" si no hay un qubit objetivo?
+
+Cuando tenés una superposición de estados —por ejemplo, $\frac{1}{\sqrt{8}}(\vert{}000\rangle + \vert{}001\rangle + \dots + \vert{}111\rangle)$—, cada término tiene su propio coeficiente (amplitud):
+
+$$\frac{1}{\sqrt{8}}\vert{}000\rangle + \dots + \frac{1}{\sqrt{8}}\vert{}110\rangle + \frac{1}{\sqrt{8}}\vert{}111\rangle$$
+
+Al aplicar `CCZ`:
+
+* Los primeros 7 estados no cumplen la condición "todos en `1"`, así que quedan con `+1`.
+* El estado $\vert{}111\rangle$ **sí** cumple la condición, así que su coeficiente pasa de $+\frac{1}{\sqrt{8}}$ a **$-\frac{1}{\sqrt{8}}$**:
+
+$$\frac{1}{\sqrt{8}}\vert{}000\rangle + \dots + \frac{1}{\sqrt{8}}\vert{}110\rangle - \frac{1}{\sqrt{8}}\vert{}111\rangle$$
+
+No es que "todos los qubits" cambien de bit ni que haya un qubit especial que reciba el golpe: **el término $\vert{}111\rangle$ en su conjunto recibe el signo `-1**`. Y si antes pusiste compuertas `X` en ciertos qubits (por ejemplo, en $q_2$ para el ejercicio 3), el estado que al pasar por las `X` queda en `111` es el que recibe ese `-1`, y al deshacer las `X` vuelve a su etiqueta original (como `011`), conservando el signo `-1`.
+
+| Característica | `CCX` / `mcx` | `CCZ` / `mcz` |
+| --- | --- | --- |
+| **Roles de los qubits** | Controles + 1 qubit objetivo | Todos simétricos (sin objetivo separado) |
+| **Condición de disparo** | Controles en `1` | Todos los qubits en `1` |
+| **Efecto al disparar** | Invierte el bit del qubit objetivo | Multiplica por `-1` la amplitud del estado |
+| **¿Modifica etiquetas `0`/`1`?** | Sí, en el qubit objetivo | No, solo cambia la fase (`+1` a `-1`) |
+
+¿Te cierra más así por qué en `CCZ` hablar de "controles" es más bien una costumbre del lenguaje que una asimetría real del circuito?
+
+========================================================================================================================================
+
+Veámoslo con matrices y vectores en la base computacional de 3 qubits $\{\vert{}000\rangle, \vert{}001\rangle, \dots, \vert{}111\rangle\}$ (en orden $\vert{}q_2 q_1 q_0\rangle$, donde la fila/columna $0$ es $\vert{}000\rangle$ y la $7$ es $\vert{}111\rangle$).
+
+---
+
+## 1. La matriz de `CCZ` (simétrica)
+
+Una `CCZ` sobre 3 qubits es un operador diagonal de $8 \times 8$:
+
+$$\text{CCZ} = \operatorname{diag}(1, 1, 1, 1, 1, 1, 1, -1)$$
+
+Es decir, para cualquier estado de la base $\vert{}b_2 b_1 b_0\rangle$ con $b_i \in \{0, 1\}$:
+
+$$\text{CCZ}\vert{}b_2 b_1 b_0\rangle = (-1)^{b_2 b_1 b_0}\,\vert{}b_2 b_1 b_0\rangle$$
+
+Fijate en el exponente $b_2 b_1 b_0$:
+
+* Solo vale $1$ cuando $b_2 = 1$, $b_1 = 1$ y $b_0 = 1$. Ahí da $(-1)^1 = -1$.
+* En los otros 7 estados al menos un bit es $0$, así que el producto $b_2 b_1 b_0 = 0$ y da $(-1)^0 = +1$.
+
+La expresión $b_2 b_1 b_0$ es **simétrica** bajo cualquier permutación de índices: no hay un índice "objetivo" distinto de los otros.
+
+---
+
+## 2. La matriz de `CCX` / Toffoli (asimétrica)
+
+Si tomamos a $q_2$ como qubit objetivo y a $q_1, q_0$ como controles, su acción sobre un estado de la base es:
+
+$$\text{CCX}\vert{}b_2 b_1 b_0\rangle = \vert{}(b_2 \oplus b_1 b_0)\, b_1\, b_0\rangle$$
+
+A diferencia de `CCZ`, acá el bit $b_2$ **cambia** de valor cuando $b_1 b_0 = 1$:
+
+* $\vert{}110\rangle \mapsto \vert{}(0 \oplus 1\cdot 1)\, 1\, 0\rangle = \vert{}010\rangle$ (en notación $\vert{}q_2 q_1 q_0\rangle$, si los controles son $q_1, q_0$ y el objetivo es $q_2$).
+
+---
+
+## 3. Cómo actúa `CCZ` sobre un vector de estado general
+
+Un estado arbitrario de 3 qubits es un vector columna $\psi \in \mathbb{C}^8$:
+
+$$\vert{}\psi\rangle = \sum_{b_2, b_1, b_0 \in \{0,1\}} \alpha_{b_2 b_1 b_0}\,\vert{}b_2 b_1 b_0\rangle$$
+
+Al aplicar $\text{CCZ}$ por linealidad:
+
+$$\text{CCZ}\vert{}\psi\rangle = \sum_{b_2, b_1, b_0} \alpha_{b_2 b_1 b_0}\,\text{CCZ}\vert{}b_2 b_1 b_0\rangle = \sum_{b_2, b_1, b_0} (-1)^{b_2 b_1 b_0}\,\alpha_{b_2 b_1 b_0}\,\vert{}b_2 b_1 b_0\rangle$$
+
+En forma matricial:
+
+$$\text{CCZ} \begin{pmatrix} \alpha_{000} \\ \alpha_{001} \\ \alpha_{010} \\ \alpha_{011} \\ \alpha_{100} \\ \alpha_{101} \\ \alpha_{110} \\ \alpha_{111} \end{pmatrix} = \begin{pmatrix} \alpha_{000} \\ \alpha_{001} \\ \alpha_{010} \\ \alpha_{011} \\ \alpha_{100} \\ \alpha_{101} \\ \alpha_{110} \\ -\alpha_{111} \end{pmatrix}$$
+
+El signo `-1` multiplica únicamente a la componente $\alpha_{111}$ del vector completo.
+
+---
+
+## 4. Qué pasa si conjugamos con `X` (ejemplo del ejercicio 3: marcar $\vert{}011\rangle$)
+
+Si aplicamos $X$ en $q_2$ antes y después de $\text{CCZ}$, el operador total es:
+
+$$U = (X \otimes I \otimes I)\,\text{CCZ}\,(X \otimes I \otimes I)$$
+
+Como $X\vert{}0\rangle = \vert{}1\rangle$ y $X\vert{}1\rangle = \vert{}0\rangle$, para un estado de la base $\vert{}b_2 b_1 b_0\rangle$ tenemos:
+
+1. $(X \otimes I \otimes I)\vert{}b_2 b_1 b_0\rangle = \vert{}(1 \oplus b_2)\, b_1\, b_0\rangle$.
+2. $\text{CCZ}$ multiplica por $-1$ si y solo si $(1 \oplus b_2) = 1$, $b_1 = 1$ y $b_0 = 1$ —es decir, si y solo si $b_2 = 0$, $b_1 = 1$ y $b_0 = 1$ (el estado $\vert{}011\rangle$).
+3. $(X \otimes I \otimes I)$ vuelve a invertir el primer bit, devolviendo $\vert{}b_2 b_1 b_0\rangle$.
+
+En resumen:
+
+$$U\vert{}b_2 b_1 b_0\rangle = \begin{cases} -\vert{}011\rangle & \text{si } \vert{}b_2 b_1 b_0\rangle = \vert{}011\rangle \\ +\vert{}b_2 b_1 b_0\rangle & \text{en cualquier otro caso} \end{cases}$$
+
+---
+
+## 5. Por qué el ancilla en $\vert{}-\rangle$ era equivalente a esto
+
+Cuando se usa `mcx` sobre 3 qubits de búsqueda más 1 ancilla en $\vert{}-\rangle = \frac{1}{\sqrt{2}}(\vert{}0\rangle - \vert{}1\rangle)$:
+
+$$\text{MCX}\Big(\vert{}b_2 b_1 b_0\rangle \otimes \vert{}-\rangle\Big) = \vert{}(b_2 b_1 b_0)\rangle \otimes X^{b_2 b_1 b_0}\vert{}-\rangle$$
+
+Como $X\vert{}-\rangle = \frac{1}{\sqrt{2}}(\vert{}1\rangle - \vert{}0\rangle) = -\vert{}-\rangle$, tenemos $X^c\vert{}-\rangle = (-1)^c\vert{}-\rangle$ para $c \in \{0, 1\}$. Sustituyendo $c = b_2 b_1 b_0$:
+
+$$\text{MCX}\Big(\vert{}b_2 b_1 b_0\rangle \otimes \vert{}-\rangle\Big) = (-1)^{b_2 b_1 b_0}\,\vert{}b_2 b_1 b_0\rangle \otimes \vert{}-\rangle$$
+
+El factor $(-1)^{b_2 b_1 b_0}$ aparece delante de $\vert{}b_2 b_1 b_0\rangle$ y el estado $\vert{}-\rangle$ queda factorizado sin cambios. Usar $\text{CCZ}$ directamente sobre los 3 qubits produce el mismo factor $(-1)^{b_2 b_1 b_0}$ sin necesidad de ese cuarto espacio tensorial.
+
+=========================================================================================================================
+
+La matriz **CCX** (Toffoli) es una matriz de permutación de $8 \times 8$. Tomando la base ordenada $\{\vert{}000\rangle, \vert{}001\rangle, \vert{}010\rangle, \vert{}011\rangle, \vert{}100\rangle, \vert{}101\rangle, \vert{}110\rangle, \vert{}111\rangle\}$ en orden $\vert{}q_2 q_1 q_0\rangle$, con controles en $q_1, q_0$ y objetivo en $q_2$:
+
+$$\text{CCX} = \begin{pmatrix} 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\ 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\ 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\ 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\ 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \end{pmatrix}$$
+
+### Qué hace en la matriz:
+
+* Las primeras 6 filas/columnas (`000` a `101`) son la identidad: dejan el estado igual.
+* Las últimas 2 filas/columnas (`110` y `111`, donde $q_1 = 1$ y $q_0 = 1$) intercambian $\vert{}110\rangle \leftrightarrow \vert{}111\rangle$, es decir, invierten el bit $q_2$.
+* A diferencia de `CCZ` (que es diagonal con un `-1` en la esquina inferior derecha), `CCX` tiene `1`s y `0`s fuera de la diagonal porque **reordena/permuta** amplitudes entre estados de base, sin introducir signos negativos.
+
+============================================================================================================================
+
+La matriz **CCX** (Toffoli) es una matriz de permutación de $8 \times 8$. Tomando la base ordenada $\{\vert{}000\rangle, \vert{}001\rangle, \vert{}010\rangle, \vert{}011\rangle, \vert{}100\rangle, \vert{}101\rangle, \vert{}110\rangle, \vert{}111\rangle\}$ en orden $\vert{}q_2 q_1 q_0\rangle$, con controles en $q_1, q_0$ y objetivo en $q_2$:
+
+$$\text{CCX} = \begin{pmatrix} 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\ 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\ 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\ 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\ 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \end{pmatrix}$$
+
+### Qué hace en la matriz:
+
+* Las primeras 6 filas/columnas (`000` a `101`) son la identidad: dejan el estado igual.
+* Las últimas 2 filas/columnas (`110` y `111`, donde $q_1 = 1$ y $q_0 = 1$) intercambian $\vert{}110\rangle \leftrightarrow \vert{}111\rangle$, es decir, invierten el bit $q_2$.
+* A diferencia de `CCZ` (que es diagonal con un `-1` en la esquina inferior derecha), `CCX` tiene `1`s y `0`s fuera de la diagonal porque **reordena/permuta** amplitudes entre estados de base, sin introducir signos negativos.
+
+==============================================================================================================================
+
+No del todo: ahí se juntan dos ideas distintas que conviene separar con cuidado para que no se crucen.
+
+* **¿Por qué ocurre el *phase kickback*?** No depende de que una compuerta sea diagonal, sino de aplicar una compuerta controlada (como `CX` o `CCX`) sobre un qubit objetivo preparado en un **autovector** (como $\vert{}-\rangle$, que es autovector de $X$ con autovalor $-1$). Como $\vert{}-\rangle$ no cambia de estado, el autovalor $-1$ "pasa hacia atrás" como fase global/relativa de los qubits de control cuando se cumple la condición. De hecho, `CCX` **sí** produce *phase kickback* si ponés su objetivo en $\vert{}-\rangle$ (de ahí venía el ancilla en los ejercicios 3 y 4).
+* **¿Por qué `CCZ` es diagonal y actúa simétricamente?** Porque es una compuerta de fase: no permuta estados de la base (por eso es diagonal), sino que multiplica por $-1$ la amplitud del estado $\vert{}111\rangle$. Como el signo $-1$ multiplica al estado completo de los 3 qubits —y no a un bit objetivo separado—, no hace falta un ancilla en $\vert{}-\rangle$ para lograr el cambio de fase.
+
+En resumen: **la diagonalidad de `CCZ` explica por qué marca directamente la fase de $\vert{}111\rangle$ sin mover bits ni necesitar ancilla**, mientras que el ***phase kickback*** es el mecanismo por el cual una compuerta de cambio de bit (`X` / `CCX`) sobre $\vert{}-\rangle$ se convierte en un cambio de fase.
+
+¿Querés que veamos un ejemplo cortito de *phase kickback* con una simple `CX` sobre $\vert{}+\rangle \otimes \vert{}-\rangle$ para fijar bien esa diferencia?
+
+==============================================================================================================================
+
+Pero ¿no hay phase kickback con los operadores de ortación también? como Z, S, T, Rz....
+
+**Sí, totalmente.** De hecho, el *phase kickback* ocurre con **cualquier** compuerta controlada $CU$ cuando el qubit objetivo está en un autovector de $U$, incluidos $Z$, $S$, $T$ y $R_z(\theta)$.
+
+La diferencia está en el **autovalor** del qubit objetivo: con $X$ sobre $\vert{}-\rangle$ el autovalor es $-1$ (un cambio de signo limpio), mientras que con operadores de rotación alrededor de $Z$ ($Z$, $S$, $T$, $R_z$), los autovalores sobre $\vert{}1\rangle$ son **fases complejas** del tipo $e^{i\phi}$ —y es exactamente lo que usa **QPE** (la estimación de fase cuántica que venías trabajando).
+
+---
+
+## 1. Cómo funciona con $Z$, $S$, $T$ o $R_z$ controlados
+
+Tomemos un operador diagonal $U$ con autovectores $\vert{}0\rangle$ y $\vert{}1\rangle$:
+
+$$U\vert{}0\rangle = \vert{}0\rangle, \qquad U\vert{}1\rangle = e^{i\phi}\vert{}1\rangle$$
+
+* En **$Z$**: $e^{i\phi} = -1$ ($\phi = \pi$).
+* En **$S$**: $e^{i\phi} = i$ ($\phi = \pi/2$).
+* En **$T$**: $e^{i\phi} = e^{i\pi/4}$ ($\phi = \pi/4$).
+* En **$R_z(\theta)$** (con definición estándar $\exp(-i\frac{\theta}{2}Z)$): sobre $\vert{}1\rangle$ toma fase $e^{i\theta/2}$.
+
+Ahora supongamos un qubit de control en $\vert{}+\rangle = \frac{1}{\sqrt{2}}(\vert{}0\rangle + \vert{}1\rangle)$ y el qubit objetivo en $\vert{}1\rangle$, aplicando una compuerta controlada $CU$:
+
+1. Estado inicial: $\frac{1}{\sqrt{2}}(\vert{}0\rangle + \vert{}1\rangle) \otimes \vert{}1\rangle$.
+2. Si el control está en $\vert{}0\rangle$, $U$ no se aplica: queda $\vert{}0\rangle \otimes \vert{}1\rangle$.
+3. Si el control está en $\vert{}1\rangle$, $U$ actúa sobre $\vert{}1\rangle$ y devuelve $e^{i\phi}\vert{}1\rangle$: queda $\vert{}1\rangle \otimes e^{i\phi}\vert{}1\rangle$.
+
+Como $e^{i\phi}$ es un escalar multiplicando a ese término, podemos sacarlo adelante del producto tensorial y factorizar el objetivo $\vert{}1\rangle$:
+
+$$\frac{1}{\sqrt{2}}\Big(\vert{}0\rangle + e^{i\phi}\vert{}1\rangle\Big) \otimes \vert{}1\rangle$$
+
+El objetivo $\vert{}1\rangle$ **no cambia de estado**, pero su fase $e^{i\phi}$ **pasa hacia atrás ("kickback")** al qubit de control, convirtiéndose en una **fase relativa** entre $\vert{}0\rangle$ y $\vert{}1\rangle$ en el control.
+
+---
+
+## 2. ¿Por qué esto es el motor de QPE?
+
+En QPE, los qubits del registro de estimación empiezan en $\vert{}+\rangle$ y controlan potencias $U^{2^j}$ sobre un autovector $\vert{}\psi\rangle$ con autovalor $e^{2\pi i \varphi}$:
+
+* Cada qubit de control $j$ recibe un *phase kickback* de fase $2\pi \cdot 2^j \varphi$.
+* El objetivo $\vert{}\psi\rangle$ queda intacto.
+* Luego la **QFT inversa** traduce esas fases acumuladas en el registro de control a una representación binaria de $\varphi$.
+
+Cuando antes usaste `CCZ` o `mcp` sin ancilla en Grover, no necesitabas ese *kickback* porque `CCZ` ya aplicaba el signo directamente sobre los qubits de búsqueda. Pero cuando querés **medir o extraer** la fase de operadores como $Z$, $S$, $T$ o $R_z$ en un registro de control, el *phase kickback* de esas rotaciones es justamente lo que hace posible el algoritmo.

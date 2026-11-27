@@ -1,0 +1,47 @@
+Porque `CCZ` y `CCCCZ` se usan como **oráculos de fase** (compuertas $Z$ controladas) que cambian el signo (fase $-1$) **únicamente** cuando todos sus qubits de control/objetivo están en $\vert{}1\rangle$:
+
+* **`CCZ` (3 qubits):** invierte la fase solo del estado $\vert{}111\rangle$. En el algoritmo de Grover, el oráculo marca el estado objetivo cambiando su signo y el operador de difusión amplifica su amplitud, por lo que al medir sale `111` (3 unos).
+* **`CCCCZ` (5 qubits):** invierte la fase solo del estado $\vert{}11111\rangle$. Al ser la versión de 5 qubits de la misma $Z$ multicontrolada, el estado marcado es $\vert{}11111\rangle$ y Grover amplifica `11111` (5 unos).
+
+*(Nota: si en tu circuito agregaste compuertas $X$ antes y después de la $Z$ multicontrolada para marcar otro estado, por ejemplo $\vert{}101\rangle$, entonces el estado marcado y devuelto cambiaría a ese).*
+
+Porque `CCZ` y `CCCCZ` se usan como **oráculos de fase** (compuertas $Z$ controladas) que cambian el signo (fase $-1$) **únicamente** cuando todos sus qubits de control/objetivo están en $\vert{}1\rangle$:
+
+* **`CCZ` (3 qubits):** invierte la fase solo del estado $\vert{}111\rangle$. En el algoritmo de Grover, el oráculo marca el estado objetivo cambiando su signo y el operador de difusión amplifica su amplitud, por lo que al medir sale `111` (3 unos).
+* **`CCCCZ` (5 qubits):** invierte la fase solo del estado $\vert{}11111\rangle$. Al ser la versión de 5 qubits de la misma $Z$ multicontrolada, el estado marcado es $\vert{}11111\rangle$ y Grover amplifica `11111` (5 unos).
+
+*(Nota: si en tu circuito agregaste compuertas $X$ antes y después de la $Z$ multicontrolada para marcar otro estado, por ejemplo $\vert{}101\rangle$, entonces el estado marcado y devuelto cambiaría a ese).*
+
+Vayamos paso a paso con el ejemplo de **3 qubits y `CCZ**`, que es el más fácil de visualizar:
+
+1. **Al principio, todos los estados tienen la misma probabilidad:**
+Con 3 qubits hay $2^3 = 8$ estados posibles: `000`, `001`, `010`, `011`, `100`, `101`, `110` y `111`. Grover arranca poniendo todos en superposición uniforme: cada uno tiene la misma amplitud (la misma "altura" o peso).
+2. **El oráculo (`CCZ`) solo "señala" al `111`:**
+Una compuerta $Z$ normal cambia el signo de $\vert{}1\rangle$ a $-\vert{}1\rangle$ y deja $\vert{}0\rangle$ igual. Una `CCZ` (Z doblemente controlada) es como decir: *"solo cambiá el signo a $-1$ si **todos** los qubits son `1`"*.
+* Si el estado es `101`, no cumple la condición $\to$ queda igual.
+* Si el estado es `111`, **sí** cumple la condición $\to$ su amplitud pasa de $+c$ a $-c$.
+*(Ojo: cambiar el signo **no** cambia su probabilidad todavía, porque $(-c)^2 = c^2$; solo lo "marca" para el siguiente paso).*
+
+
+3. **El difusor convierte esa marca en mayor probabilidad:**
+El operador de difusión de Grover toma el promedio de todas las amplitudes y "refleja" cada amplitud respecto a ese promedio. Como el `111` tenía signo negativo (por debajo del promedio), al reflejarlo sube mucho por encima del promedio, mientras que los otros 7 estados bajan.
+4. **Al medir, gana el que tiene mayor amplitud:**
+Como `111` quedó con la amplitud más grande, al medir al final del circuito lo más probable es que salga **`111`**.
+
+---
+
+### ¿Por qué con `CCCCZ` sale `11111`?
+
+Es exactamente el mismo mecanismo, pero con **5 qubits** en vez de 3:
+
+* Hay $2^5 = 32$ estados posibles (desde `00000` hasta `11111`).
+* `CCCCZ` es una $Z$ con más controles: solo invierte el signo del estado donde **los 5 qubits son `1**`, es decir, **`11111`**.
+* El difusor amplifica ese único estado marcado, por lo que al medir sale **`11111`**.
+
+---
+
+### Una idea clave para no confundirse
+
+En Grover, el oráculo **no "calcula" ni "adivina" la solución** desde cero: **vos le decís cuál es la solución** mediante la condición que programa el oráculo. Si el oráculo es una `CCZ` pelada, la única condición que detecta es *"todos en 1"* (`111`).
+
+¿Qué parte de este recorrido sentís que todavía hace ruido: cómo actúa la compuerta `CCZ` sobre los estados, o cómo el difusor hace crecer la probabilidad?

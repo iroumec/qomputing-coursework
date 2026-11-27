@@ -111,7 +111,7 @@ con la tabla de figuras (archivo, sección del notebook, celda) y la línea list
 Detalles:
 
 - **SVG vs PNG.** Las figuras de matplotlib (circuitos, histogramas) salen como SVG vectorial. Las celdas que arman la imagen a mano con `fig.savefig(..., format="png")` o `display(Image(...))` salen como PNG a la resolución original; es el caso de las tablas y de los mosaicos de circuitos de `qpe.ipynb`. El manifiesto indica el formato de cada una.
-- **Nombres.** El archivo se nombra con la última sección markdown previa (`inciso-ii.svg`). Si se agrega una figura dentro de la misma sección, las posteriores de esa sección se renumeran (`inciso-ii-2.svg`). El script avisa cuando una figura cambia de nombre.
+- **Nombres.** El archivo concatena la jerarquía de secciones del notebook, ignorando el `#` del título: `## Ejercicio 1` → `### Resolución` → `#### Inciso 1` produce `ejercicio_1-resolucion-inciso_1.svg`. Los espacios dentro de cada sección se vuelven `_` y los niveles se unen con `-`. Si el nombre supera los 100 caracteres se descartan las secciones menos específicas. Varias figuras dentro de la misma sección se numeran `-2`, `-3`, etc. El manifiesto muestra la ruta completa (`Ejercicio 1 › Resolución › Inciso 1`) y avisa cuando una figura cambia de nombre.
 - **Caché.** Si el notebook no cambió, no se vuelve a ejecutar. Para forzar: `.venv/bin/python reports/_scripts/reports.py figures --force`.
 - **Sin Qiskit instalado.** Si el notebook no se puede ejecutar, se usan las salidas ya guardadas en el `.ipynb`, así el PDF igual se compila.
 - **Rutas.** `notebooks:` se resuelve respecto de la carpeta del informe; `make report-new` convierte automáticamente `practicos/x.ipynb` a `../../practicos/x.ipynb`.

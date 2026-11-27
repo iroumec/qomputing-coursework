@@ -69,7 +69,7 @@ SHARED = REPORTS / "_shared"
 CACHE = REPORTS / ".figures-cache"
 REPORT_FILE = "informe.qmd"
 DEFAULT_FIGURES_DIR = "assets/figures"
-EXTRACTOR_VERSION = 3
+EXTRACTOR_VERSION = 5
 
 # Configuración que se inyecta en el kernel para que IPython entregue SVG.
 IPYTHON_SVG_CONFIG = "c = get_config()\nc.InlineBackend.figure_formats = {'svg'}\n"
@@ -89,15 +89,26 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def slugify(text: str, maxlen: int = 48) -> str:
+def slugify(text: str, maxlen: int = 48, separator: str = "-") -> str:
     """Convierte un título en un nombre de archivo legible."""
     text = unicodedata.normalize("NFKD", text)
     text = "".join(ch for ch in text if not unicodedata.combining(ch))
     text = re.sub(r"\$[^$]*\$", "", text)                 # quita math inline
     text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)  # links -> texto
     text = re.sub(r"[`*_#{}]", "", text)
-    text = re.sub(r"[^0-9A-Za-z]+", "-", text)
-    return text.strip("-").lower()[:maxlen].strip("-") or "figura"
+    text = re.sub(r"[^0-9A-Za-z]+", separator, text)
+    text = text.strip(separator).lower()[:maxlen]
+    return text.strip(separator) or "figura"
+
+
+def heading_slug(
+    chain: tuple[str, ...], max_component: int = 48, max_total: int = 100
+) -> str:
+    """Concatena la jerarquía de secciones: `ejercicio_1-resolucion-inciso_1`."""
+    parts = [slugify(title, max_component, separator="_") for title in chain if title]
+    while len(parts) > 1 and len("-".join(parts)) > max_total:
+        parts.pop(0)  # conserva las secciones más específicas
+    return "-".join(parts)[:max_total].strip("-_") or "figura"
 
 
 def front_matter(qmd: Path) -> dict:
@@ -307,17 +318,30 @@ def execute_notebook(nb, nb_path: Path, timeout: int) -> None:
         shutil.rmtree(ipython_dir, ignore_errors=True)
 
 
-def heading_map(nb) -> dict[int, str]:
-    """Asocia cada celda de código con el último encabezado markdown previo."""
-    headings: dict[int, str] = {}
-    current = None
+def heading_map(nb) -> dict[int, tuple[str, ...]]:
+    """Asocia cada celda de código con la jerarquía de encabezados previos.
+
+    Se mantiene una pila de secciones: un encabezado de nivel n descarta las
+    secciones de nivel >= n antes de apilarse. El encabezado de nivel 1 se
+    ignora (es el título del notebook) y reinicia la jerarquía.
+    """
+    headings: dict[int, tuple[str, ...]] = {}
+    stack: list[tuple[int, str]] = []
+    title_re = re.compile(r"^\s{0,3}(#{1,6})\s+(.+?)\s*#*\s*$", re.M)
+
     for index, cell in enumerate(nb.cells):
         if cell.cell_type == "markdown":
-            matches = re.findall(r"^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$", cell.source, re.M)
-            if matches:
-                current = matches[-1].strip()
+            for match in title_re.finditer(cell.source):
+                level = len(match.group(1))
+                title = match.group(2).strip()
+                if level == 1:
+                    stack.clear()
+                    continue
+                while stack and stack[-1][0] >= level:
+                    stack.pop()
+                stack.append((level, title))
         elif cell.cell_type == "code":
-            headings[index] = current
+            headings[index] = tuple(title for _, title in stack)
     return headings
 
 
@@ -344,8 +368,8 @@ def extract(nb, out_dir: Path, name: str, figures_dir_rel: str) -> list[dict]:
         if cell.cell_type != "code":
             continue
         for out_index, (fmt, payload) in enumerate(cell_figures(cell)):
-            heading = headings.get(index)
-            base = slugify(heading) if heading else "figura"
+            chain = headings.get(index) or ()
+            base = heading_slug(chain)
             used[base] = used.get(base, 0) + 1
             suffix = "" if used[base] == 1 else f"-{used[base]}"
             filename = f"{base}{suffix}.{fmt}"
@@ -360,12 +384,12 @@ def extract(nb, out_dir: Path, name: str, figures_dir_rel: str) -> list[dict]:
                 {
                     "file": filename,
                     "path": f"{figures_dir_rel}/{name}/{filename}",
-                    "heading": heading or "(sin sección)",
+                    "heading": " › ".join(chain) or "(sin sección)",
                     "cell": index,
                     "output": out_index,
                     "cell_id": cell.get("id", ""),
                     "format": fmt,
-                    "label": f"fig-{name}-{base}{suffix}",
+                    "label": f"fig-{name}-{slugify(' '.join(chain) or 'figura', 120)}{suffix}",
                 }
             )
     return entries

@@ -1,0 +1,105 @@
+De acuerdo al Vasco, el mundo va haci la multidisciplina. Más interdisciplina en la carrera.
+
+No importa lo que hagas con la IA. Lo importante es explorar.
+
+# Algoritmo VQE (Variational Quantum Eigensolver)
+
+El VQE está concebido para hacer simulación. El uso en combinatoria es secundario.
+
+Capítulo 7
+
+NO es una generalización del QAOA. No es la mezcla que se hace en el QAOA.
+
+El VQE es una generalización del VQE usado para combinatoria.
+
+En VQE están todas las Puli.
+
+Hay dos partículos fundamentales: fermiones y bosones. Los electrones son fermiones. todo lo asociado con materia son fermiones. Los bosones son los que llevan las interacciones.
+
+Los gravitiones no están demostrados.
+
+Los fermiones tienen spins enteros?
+
+Se puede encontrar el autovalor mínimo como los autovalores excitados (estados estacionarios).
+
+Desde el punto de vista de la computación clásica, armo yo el valor.
+
+Cuando Hf no está en Z, no se está en la base computacional.
+
+$|\langlex|\psi\rangle|^2$ es la proyección sobre el estado básico.
+
+"Supra k"
+
+El k arriba está porque yo puedo tener un mismo autovalor para varios autovectores. 4 autovectores con 3 autovalores, por ejemplo. La base está formado por los 4 autovectores. Si no se pone el k, se asume que solo hay un autovalor para cada autovector.
+
+Phi como combinación lineal de las amplitudes para cada autovector.
+
+$\langle H_f \rangle$ -> Notación especial para el valor esperado.
+
+Entonces, la idea es obtener esas probabilidades con la computación cuántica.
+
+Lo que busco es el $\phi$ mínimo
+
+$3z_0z_1 + 1/2 z_1 + 4z_1z_2$ -> Esto es el Hamiltoniano.
+
+ZIZ + IZI + IZZ
+
+Antes estaba la función de costo metida acá. Pasamos a algo más genérico, que es para simular.
+
+Cuando llevo el fermiónico, acá voy a tener otros coeficientes y compuertas X, Y y Z.
+
+Al valor esperado de $3z_0z_1 + 1/2 z_1 + 4z_1z_2$ con respecto al $\phi$.
+
+Una propiedad fuerte de todo esto es la linealidad -> $3\langle \psi | Z_0Z_1 | \psi \rangle + \frac{1}{2} \langle \psi | Z_1 | \psi \rangle$.
+
+## Cambios de Base
+
+Tenemos los autovectores y los autovalores de cada una de las Pauli.
+
+El $| +i \rangle = \frac{1}{\sqrt{2}}(0 i)t$.
+
+El cambio de base es, básicamente, ir al $|+\rangle$ con un Hadamard y luego rotar $\pi/2$ para ir a $|+i\rangle$. Y así sucesivamente.
+
+Yo lo que quiero son las probabilidades para luego calcular el valor esperado.
+
+Hago un cambio de base y luego mido la canónica.
+
+EN lugar de medir en el lado izquierdo, mido en el lado derecho.
+
+Al valor esperado lo necesito en bra.
+
+El $\phi$ es el estado que prepare. Cuando mido, ya mido sobre la base canónica si le aplico eso.
+
+Medir sobre el autovector 1 + -, es lo mismo que medir 1 0 1 si le aplico dichas operaciones a $\phi$.
+
+Cuando quiero medir X, se debe aplicar H. Si se quiere medir Y, se debe aplicar HSdaga.
+
+Hay ocho posibles autovectores.
+
+Ansatz -> Tiene que ver con una propuesta, hipótesis, solución inicial.
+
+El ansatz no es elegir solo el lambda, pero elegir el circuito.
+
+Como algoritmo de minimización, en PennyLane se suele usar el descenso del gradiente.
+
+EL Ansatz son generalmente rotaciones.
+
+HEA -> Ansatz de hardware eficiente, genérico. Es como un template. Se le ponen unos thetas específicos. Es el que la IA suele hacer. Es rápido. No es profundo. Es independiente del problema físico.
+
+UCCSD -> Ya se tiene que tener conocimiento del problema. Hay que saber. Se tiene que saber sobre el problema físico/químico que se está parametrizando.
+
+Para 4 qubits, tengo 16 parámetros. Estos son los que vuelven.
+
+Los controls ya están estudiados. Es así para meter desorden, mezclar, colocar todo en paralelo. ME PERMITE EXPLORAR MUCHO EN PARALELO. La decisión que tomo la tomo considerando todo lo explorado en paralelo.
+
+La computación cuántica le permite al clásico tomar una mejor decisión dado lo que se exploró.
+
+Los solidos son períodicos.
+
+Hamiltonianos Ising -> Son solo con Z.
+
+Cuanto más sabe uno, más entra uno en la cosa en cuestión y menos librerías y abstracciones usa, porque más cosas debe moficiar.
+
+Open Fermion es el más flexible de todas. Pero solo trabaja con fermiónicos.
+
+QSVM, redes neuronales cuánticas (muy relacionado con VQE).

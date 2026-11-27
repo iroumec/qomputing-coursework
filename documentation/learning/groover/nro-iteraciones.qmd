@@ -1,0 +1,55 @@
+La fórmula estándar para el número óptimo de iteraciones de Grover es:
+
+$$k \approx \left\lfloor \frac{\pi}{4}\sqrt{\frac{N}{M}} \right\rfloor$$
+
+donde:
+
+* **$N = 2^n$** es el número total de estados posibles en el espacio de búsqueda ($n$ qubits).
+* **$M$** es la cantidad de estados solución (los que el oráculo marca con signo `-1`).
+* **$k$** es la cantidad de veces que repetís el bloque `[Oráculo + Difusor]`.
+
+---
+
+## 1. De dónde sale $\frac{\pi}{4}\sqrt{\frac{N}{M}}$
+
+Pensá el estado del sistema en el plano formado por dos vectores ortogonales:
+
+* **$\vert{}\omega\rangle$**: la superposición uniforme de los $M$ estados solución.
+* **$\vert{}s'\rangle$**: la superposición uniforme de los $N - M$ estados no solución.
+
+Al arrancar con compuertas Hadamard, el estado inicial $\vert{}s\rangle$ está casi perpendicular a $\vert{}\omega\rangle$: forma un ángulo pequeño $\theta$ con el subespacio de "no soluciones", medido desde $\vert{}s'\rangle$ hacia $\vert{}\omega\rangle$, dado por:
+
+$$\sin\theta = \sqrt{\frac{M}{N}}$$
+
+Cuando $N$ es grande frente a $M$, $\sin\theta \approx \theta$, así que:
+
+$$\theta \approx \sqrt{\frac{M}{N}}$$
+
+### Cada iteración de Grover rota ese ángulo en $2\theta$
+
+Cada paso `[Oráculo + Difusor]` actúa como una rotación en ese plano de **$2\theta$** hacia el estado solución $\vert{}\omega\rangle$. Para llegar desde el ángulo inicial $\theta$ hasta $\frac{\pi}{2}$ (donde la probabilidad de medir la solución es máxima):
+
+$$k \cdot (2\theta) + \theta \approx \frac{\pi}{2} \implies k \approx \frac{\pi}{4\theta} \approx \frac{\pi}{4}\sqrt{\frac{N}{M}}$$
+
+Por eso aparece $\frac{\pi}{4}$: viene de dividir un cuarto de vuelta ($\frac{\pi}{2}$) entre un paso angular de $2\theta$.
+
+---
+
+## 2. Por qué se redondea (y por qué pasarse es contraproducente)
+
+La fórmula da un número real, pero **las iteraciones son enteras** ($1, 2, 3, \dots$). Redondear al entero más cercano (o usar piso/redondeo según el caso) busca maximizar $\sin^2\big((2k+1)\theta\big)$, que es la probabilidad de éxito tras $k$ iteraciones.
+
+* **Si hacés pocas iteraciones:** el vector todavía no llegó cerca de $\vert{}\omega\rangle$; la probabilidad es menor al máximo.
+* **Si te pasás de iteraciones:** la rotación **supera** los $90^\circ$ ($\frac{\pi}{2}$) y empieza a alejarse de la solución, haciendo que la probabilidad baje de nuevo (oscila).
+
+---
+
+## 3. Ejemplos rápidos para fijar la cuenta
+
+| Caso | $N$ (qubits) | Soluciones $M$ | $\frac{\pi}{4}\sqrt{N/M}$ | $k$ teórico | Probabilidad aprox. |
+| --- | --- | --- | --- | --- | --- |
+| 3 qubits, 1 solución | $8$ ($n=3$) | $1$ | $\frac{\pi}{4}\sqrt{8} \approx 2.22$ | **2** | $\approx 94.5\%$ |
+| 3 qubits, 2 soluciones | $8$ ($n=3$) | $2$ | $\frac{\pi}{4}\sqrt{4} \approx 1.57$ | **1 o 2** | $100\%$ en $k=1$ ($\theta = 30^\circ$, $1\cdot 60^\circ + 30^\circ = 90^\circ$) |
+| 4 qubits, 1 solución | $16$ ($n=4$) | $1$ | $\frac{\pi}{4}\sqrt{16} = \pi \approx 3.14$ | **3** | $\approx 96.1\%$ |
+
+Fijate en el caso de $N = 8, M = 2$: como $\sin\theta = \sqrt{2/8} = \frac{1}{2}$, tenemos $\theta = 30^\circ$ ($\frac{\pi}{6}$). Con **1 iteración** girás $2\theta = 60^\circ$, sumás los $30^\circ$ iniciales y llegás exacto a $90^\circ$, con probabilidad $1$. Si hicieras 3 iteraciones en total, darías una vuelta completa del patrón de oscilación y volverías al punto de partida.

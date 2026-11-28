@@ -191,7 +191,7 @@ Como puede observarse, el resultado más frecuente es 11111, que corresponde con
 
 ## Ejercicio 2
 
-Se pide repetir los incisos anteriores pero variando el número de iteraciones. Debido a que no se especifica entre qué valores variar las iteraciones, se decidió arbitrariamente que la variación se realizará entre los valores del conjunto $\{1, 2, 3, 4, 5, 6, 7, 8, 9\}\$.
+Se pide repetir los incisos anteriores pero variando el número de iteraciones. Debido a que no se especifica entre qué valores variar las iteraciones, se decidió arbitrariamente que la variación se realizará entre los valores del conjunto $\{1, 2, 3, 4, 5, 6, 7, 8, 9\}$.
 
 ### Inciso i)
 
@@ -207,7 +207,7 @@ El oráculo de este inciso es CCCCZ, de cinco qubits, cuya implementación para 
 
 ![Histogramas correspondientes a la ejecución del algoritmo de Grover con oráculo CCCCZ para 1..9 iteraciones.](assets/figures/grover/resoluciones-ejercicio_2-inciso_ii.svg){width=90%}
 
-Los mejores resultados se obtienen para 4 (cuatro) iteraciones. A diferencia del ejercicio anterior, aquí una o dos no alcanzan: con dos iteraciones la probabilidad es de aproximadamente $60\,\%$, mientras que con cuatro ronda el $100\,\%$. Por ello, considero que el número ideal para 5 qubits es cuatro: es el menor número que da un resultado prácticamente perfecto sin agregar lógica innecesaria.
+Los mejores resultados se obtienen para 4 (cuatro) iteraciones. A diferencia del ejercicio anterior, aquí una o dos no alcanzan: con dos iteraciones la probabilidad es de aproximadamente $60\,\%$ ($1200 \text{shots} / 2000 \text{shots}$), mientras que con cuatro ronda el $100\,\%$. Por ello, considero que el número ideal para 5 qubits es cuatro: es el menor número que da un resultado prácticamente perfecto sin agregar lógica innecesaria.
 
 {{< pagebreak >}}
 

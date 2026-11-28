@@ -11,7 +11,7 @@ notebooks:
 
 A lo largo de este informe, se presentan el desarrollo, el análisis teórico y los resultados experimentales correspondientes a la resolución de los trabajos prácticos de **Estimación de Fase Cuántica** (_Quantum Phase Estimation_, QPE) y **Búsqueda de Grover** (_Grover's Algorithm_), dictados en el curso.
 
-Para la implementación y simulación de los circuitos cuánticos se utilizó el _framework_ `Qiskit`, junto al lenguaje de programación Python. Si desea acceder al código fuente completo y a las _notebooks_ interactivas (`practicos/qpe.ipynb` y `practicos/grover.ipynb`), estos pueden hallarse en el repositorio de GitHub del proyecto: [https://github.com/iroumec/Quantum-Computing](https://github.com/iroumec/Quantum-Computing). Este informe no contiene código; se limita a presentar los resultados y las conclusiones de estos.
+Para la implementación y simulación de los circuitos cuánticos se utilizó el _framework_ `Qiskit`, junto al lenguaje de programación Python. El código y las _notebooks_ interactivas se encuentran adjuntos junto con este informe. También puede acceder a estos a través del repositorio de GitHub del proyecto: [https://github.com/iroumec/Quantum-Computing](https://github.com/iroumec/Quantum-Computing), en `practicos/qpe.ipynb` y `practicos/grover.ipynb`.
 
 {{< pagebreak >}}
 
@@ -27,71 +27,59 @@ El circuito utiliza dos registros cuánticos: un registro de **estimación** com
 
 Con base en lo anterior, se presentan en las siguientes secciones la resolución de los ejercicios prácticos propuestos por la cátedra de la materia.
 
-## Ejercicios
+## Pasos Previos
 
-Los ejercicios a resolver son los siguientes:
+Previo a implementar el QPE, es necesario implementar la transformada cuántica de Fourier inversa. Esto se debe a que el algoritmo QPE hace uso de ella. Para su implementación, se tomó la resolución de la cursada de la materia previa "Fundamentos de la Computación Cuántica". Esta consistía en una función que, dado un número de qubits como parámetro, generaba el circuito de la transformada cuántica de Fourier inversa considerando dicho número de qubits. A continuación, se presenta un ejemplo del circuito generado para 4 qubits.
 
-1. Implemente el QPE visto en el curso considerando diferentes operadores unitarios de rotación $U$ y diferentes cantidades de qubits objetivo ($m$) y qubits de estimación ($t$):
-  i. $U = Z$; $U = S$; $U = T$; $U = Rz(𝝅)$; $U = Rz(𝝅/2)$; $U = Rz(𝝅/4)$; $U = Rz(3𝝅/4)$; ($m = 1$ y $t = 4$).
-  ii. inciso i) con m = 2
-  iii. inciso i) con t = 6
-  iv. U = Rz(-𝝅/4); U = Rz(-3𝝅/4); (m = 1 y t = 4)
+![Circuito de la Transformada Cuántica de Fourier Inversa para 4 qubits.](assets/figures/qpe/ejercicio_1-resolucion-transformada_inversa_de_fourier.svg){width=90%}
 
-2. Analice para el ejercicio 1.i) el impacto de la fase global en los autovalores.
-
-### Pasos Previos
-
-Previo a implementar el QPE, es necesario implementar la transformada cuántica de Fourier inversa. Esto se debe a que QPE hace uso de ella. Para su implementación, se tomó la resolución de la cursada de la materia previa "Fundamentos de la Computación Cuántica". Esta consistía en una función que, dado un número de qubits como parámetro, generaba el circuito de la transformada cuántica de Fourier inversa para dicho número. A continuación, se presenta un ejemplo del circuito generador para 4 qubits.
-
-![Circuito de la Transformada Cuántica de Fourier Inversa para 4 qubits.](assets/figures/qpe/ejercicio_1-resolucion-transformada_inversa_de_fourier.svg){#fig-qpe-transformada-inversa-de-fourier width=90%}
-
-Adicionalmente, para automatizar la resolución, se definió una función capaz de generar el algoritmo para un conjunto de operadores unitarios, un $m$ y un $t$ recibidos como parámetro.
+Adicionalmente, para automatizar la resolución, se definió una función capaz de generar el algoritmo para un conjunto de operadores unitarios, un $m$ y un $t$ recibidos como parámetro. Esta se utiliza a lo largo de la resolución de los ejercicios de este práctico.
 
 Con los pasos previos realizados, se prosigue con la resolución de los ejercicios.
 
-### Ejercicio 1
+{{< pagebreak >}}
 
-El ejercicio pide implementar el algoritmo QPE visto en el curso considerando diferentes operadores unitarios de rotación $U$ y diferentes cantidades de qubits objetivo ($m$) y qubits de estimación ($t$), dependiendo del inciso en concreta. A continuación, se presenta la resolución para cada uno de los incisos.
+## Ejercicio 1
 
-#### Inciso i)
+El ejercicio pide implementar el algoritmo QPE visto en el curso considerando diferentes operadores unitarios de rotación $U$ y diferentes cantidades de qubits objetivo ($m$) y qubits de estimación ($t$), dependiendo del inciso en concreto. A continuación, se presenta la resolución para cada uno de los incisos.
 
-El inciso pide implementar el algoritmo QPE para $U \in \{Z, S, T, R_z(\pi), R_z(\pi/2), R_z(\pi/4), R_z(3\pi/4)\}$ con $m = 1$ y $t = 4$. Por consiguiente, utilizado lo definido anteriormente, se construyeron los circuitos correspondientes. A continuación, estos se presentan:
+### Inciso i)
 
-A continuación, se presentan los circuitos implementados:
+El inciso pide implementar el algoritmo QPE para $U \in \{Z, S, T, R_z(\pi), R_z(\pi/2), R_z(\pi/4), R_z(3\pi/4)\}$ con $m = 1$ y $t = 4$. Utilizado lo definido anteriormente, se construyen los circuitos correspondientes. A continuación, estos se presentan:
 
-![Implementación de QPE para los distintos operadores unitarios, considerando $m = 1$ y $t = 4$.](assets/figures/qpe/ejercicio_1-resolucion-qpe-inciso_i.svg){#fig-qpe-inciso-i width=90%}
+![Implementación de QPE para los distintos operadores unitarios, considerando $m = 1$ y $t = 4$.](assets/figures/qpe/ejercicio_1-resolucion-qpe-inciso_i.svg){width=80%}
 
-Todos los operadores unitarios utilizados son diagonales en la base computacional $\{\vert{}0\rangle, \vert{}1\rangle\}$. Por lo tanto, tanto $\vert{}0\rangle$ como $\vert{}1\rangle$ son autovectores de $U$ para un qubit y funcionan como entrada válida del circuito.
+Todos los operadores unitarios utilizados son diagonales en la base computacional $\{|0\rangle, |1\rangle\}$. Por lo tanto, tanto $|0\rangle$ como $|1\rangle$ son autovectores de $U$ para un qubit y funcionan como entrada válida del circuito.
 
 Los resultados obtenidos de la evaluación de los anteriores circuitos se muestran a continuación:
 
-![Resultados de la evaluación del circuito QPE para los distintos operadores unitarios, considerando $m = 1$ y $t= 4$.](assets/figures/qpe/ejercicio_1-resolucion-qpe-inciso_i-2.png){#fig-qpe-inciso-i-2 width=90%}
+![Resultados de la evaluación del circuito QPE para los distintos operadores unitarios, considerando $m = 1$ y $t= 4$.](assets/figures/qpe/ejercicio_1-resolucion-qpe-inciso_i-2.png){width=80%}
 
 Como puede observarse, al preparar el qubit objetivo en $|1\rangle$, los operadores $Z$, $S$ y $T$ presentan fases exactas $\theta = 1/2$, $1/4$ y $1/8$, las cuales pueden representarse exactamente con $t=4$ bits en binario ($1000_2$, $0100_2$ y $0010_2$, respectivamente), colapsando con probabilidad del $100\,\%$ en un único estado. Lo mismo sucede para las rotaciones $R_z(\pi/4)$ y $R_z(3\pi/4)$, cuya fase asociada sobre $|1\rangle$ es $\theta = 1/16$ y $3/16$, respectivamente. La representación de 4 bits es suficiente ya que la fase es un múltiplo exacto de $1/2^t$.
 
 ### Inciso ii)
 
-Las instrucciones para este inciso son las mismas que para el anterior; pero utilizando $m = 2$ en lugar de $m = 1$. A continuación, siguiendo el mismo procedimiento, se presentan las implementaciones de los circuitos:
+Las instrucciones de este inciso son las mismas que para el anterior; pero utilizando $m = 2$ en lugar de $m = 1$. A continuación, siguiendo el mismo procedimiento, se presentan las implementaciones de los circuitos:
 
-![Implementación de QPE para los distintos operadores unitarios, considerando $m = 2$ y $t = 4$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_ii.svg){#fig-qpe-inciso-ii width=90%}
+![Implementación de QPE para los distintos operadores unitarios, considerando $m = 2$ y $t = 4$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_ii.svg){width=80%}
 
 A continuación, se presentan los resultados.
 
-![Resultados de la evaluación del circuito QPE para los distintos operadores unitarios, considerando $m = 2$ y $t= 4$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_ii-2.png){#fig-qpe-inciso-ii-2 width=90%}
+![Resultados de la evaluación del circuito QPE para los distintos operadores unitarios, considerando $m = 2$ y $t= 4$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_ii-2.png){width=80%}
 
-Cuando $m = 2$, el espacio objetivo es de dos qubits y el operador total actúa como un producto tensorial de operadores diagonales sobre cada qubit. Como cada estado de la base computacional de 2 qubits es un producto tensorial de autovectores de un solo qubit (por ejemplo, $\vert{}01\rangle = \vert{}0\rangle \otimes \vert{}1\rangle$), cada uno de los cuatro estados ($\vert{}00\rangle, \vert{}01\rangle, \vert{}10\rangle, \vert{}11\rangle$) es también un autovector del operador conjunto sobre los $m$ qubits objetivo y estos autovectores funcionan como entrada válida del circuito. Se aclara esto porque, de no cumplir los operadores unitarios esta propiedad, sería necesario observar mediante un histograma los valores de $\theta$ obtenidos para distintos shots del circuito. De observarse que no siempre se elige un mismo valor, sería un indicio de que dicho autoestado enviado como entrada al circuito mediante los qubits objetivo no es un autovector del operador y, por consiguiente, no es válido aplicarle el algoritmo.
-
-Al aplicar el operador sobre múltiples qubits objetivo en $|11\rangle$, las fases individuales se suman debido a la estructura de producto tensorial ($U \otimes U$), duplicando la fase efectiva acumulada en el _phase kickback_. Por ello, si se realiza la comparación con el inciso i), se observa que las fase del estado $|11\rangle$ es dos veces la fase del estado $|1\rangle$ obtenida en el inciso anterior.
+Cuando $m = 2$, el espacio objetivo es de dos qubits y el operador total actúa como un producto tensorial de operadores diagonales sobre cada qubit. Como cada estado de la base computacional de 2 qubits es un producto tensorial de autovectores de un solo qubit (por ejemplo, $\vert{}01\rangle = \vert{}0\rangle \otimes \vert{}1\rangle$), cada uno de los cuatro estados ($\vert{}00\rangle, \vert{}01\rangle, \vert{}10\rangle, \vert{}11\rangle$) es también un autovector del operador conjunto sobre los $m$ qubits objetivo y, por consiguiente, estos autovectores funcionan como entrada válida del circuito. Se aclara esto porque, de no cumplir los operadores unitarios esta propiedad, sería necesario observar mediante un histograma los valores de $\theta$ obtenidos para distintos shots del circuito. De observarse que no siempre se elige un mismo valor, sería un indicio de que dicho autoestado enviado como entrada al circuito mediante los qubits objetivo no es un autovector del operador y, por consiguiente, no es válido aplicarle el algoritmo. Así, siendo estos autovectores válidos, al aplicar el operador sobre múltiples qubits objetivo en $|11\rangle$, las fases individuales se suman debido a la estructura de producto tensorial ($U \otimes U$), duplicando la fase efectiva acumulada en el _phase kickback_. Por ello, si se realiza la comparación con el inciso i), se observa, por ejemplo, que la fase del estado $|11\rangle$ es dos veces la fase del estado $|1\rangle$ obtenida en el inciso anterior.
 
 ### Inciso iii)
 
 Las instrucciones de este inciso son las mismas que las del inciso i); pero modificando el valor de $t$ de $t = 4$ a $t = 6$. A continuación, se presenta la implementación de los circuitos:
 
-![Implementación de QPE para los distintos operadores unitarios, considerando $m = 1$ y $t = 6$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_iii.svg){#fig-qpe-inciso-iii width=90%}
+![Implementación de QPE para los distintos operadores unitarios, considerando $m = 1$ y $t = 6$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_iii.svg){width=80%}
 
-![Resultados de la evaluación del circuito QPE para los distintos operadores unitarios, considerando $m = 1$ y $t= 6$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_iii-2.png){#fig-qpe-inciso-iii-2 width=90%}
+A continuación, se presentan los resultados de la evaluación de los circuitos previos:
 
-Incrementar el registro de estimación a $t=6$ qubits cuadruplica la resolución de la grilla ($\Delta\theta = 1/64$), permitiendo representar de forma exacta fases que en $t=4$ quedaban truncadas. No obstante, en el práctico, todas las fases obtenidas pueden representarse con 4 bits de estimación. Por consiguiente, como puede observarse, el resultado no varía con respecto al inciso i). Los últimos qubits de estimación añadidos no son utilizados. Estos qubits no mejoran la aproximación, pues esta ya es precisa. Así, el incremento de los bits de estimación ($t$) de 4 a 6 no presenta una mejora en la precisión del valor de $\theta$ buscado.
+![Resultados de la evaluación del circuito QPE para los distintos operadores unitarios, considerando $m = 1$ y $t= 6$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_iii-2.png){width=80%}
+
+Incrementar el registro de estimación a $t=6$ qubits cuadruplica la resolución de la grilla ($\Delta\theta = 1/64$), permitiendo representar de forma exacta fases que en $t=4$ quedaban truncadas. No obstante, en el práctico, **todas las fases obtenidas pueden representarse con 4 bits de estimación**. Por consiguiente, como puede observarse, el resultado no varía con respecto al inciso i). Los últimos qubits de estimación añadidos no son utilizados. Estos qubits no mejoran la aproximación, pues esta ya es precisa. Así, se concluye que el incremento de los bits de estimación ($t$) de 4 a 6 no presenta una mejora en la precisión del valor de $\theta$ buscado.
 
 ### Inciso iv)
 
@@ -102,17 +90,19 @@ Este inciso pide, utilizando $m = 1$ y $t = 4$, probar la implementación para u
 
 Los operadores unitarios presentados anteriormente se caracterizan por tener ángulos negativos. A continuación, se presenta la implementación de sus circuitos:
 
-![Implementación del algoritmo QPE para los operadores unitarios Rz(-𝝅/4) y Rz(-3𝝅/4), con $m = 1$ y $t = 4$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_iv.svg){#fig-qpe-inciso-iv width=90%}
+![Implementación del algoritmo QPE para los operadores unitarios Rz(-𝝅/4) y Rz(-3𝝅/4), con $m = 1$ y $t = 4$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_iv.svg){width=80%}
 
 Estos operadores, al igual que los utilizados en el inciso i), son diagonales en la base computacional y, por lo tanto, las entradas $\vert{}0\rangle$ y $\vert{}1\rangle$ son entradas válidas entrada válido del c
 
-![Resultados de la evaluación del circuito QPE para los operadores unitatios Rz(-𝝅/4) y Rz(-3𝝅/4), con $m = 1$ y $t = 4$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_iv-2.png){#fig-qpe-inciso-iv-2 width=90%}
+![Resultados de la evaluación del circuito QPE para los operadores unitatios Rz(-𝝅/4) y Rz(-3𝝅/4), con $m = 1$ y $t = 4$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_iv-2.png){width=80%}
 
-Debido a la periodicidad modular de la fase compleja ($e^{-2\pi i |\theta|} = e^{2\pi i (1 - |\theta|)}$), los ángulos negativos se mapean al complemento $1 - |\theta| \pmod 1$.
+Debido a la periodicidad modular de la fase compleja ($e^{-2\pi i |\theta|} = e^{2\pi i (1 - |\theta|)}$), los ángulos negativos se mapean al complemento $1 - |\theta| \pmod 1$. Así, los valores para el operador $Rz(-𝝅/4)$ para los autovectores $0$ y $1$ coinciden con los obtenidos en el inciso i) para el operador $Rz(𝝅/4)$, pero intercambiando las fases obtenidas para $0$ y $1$. Lo mismo sucede con el operador $Rz(-3𝝅/4)$ y el operador $Rz(3𝝅/4)$ del inciso i).
+
+{{< pagebreak >}}
 
 ## Ejercicio 2
 
-Este ejercicio pide analizar, para el ejercicio 1.i), el impacto de la fase global de los autovalores. Para ello, se decidió comparar el circuito con los operadores unitarios de rotación $Z$ y $Rz(\pi)$. Esto se debe a que estos operadores, presentes en el ejercicio 1.i), solo se diferencian entre sí en su fase global.
+Este ejercicio pide analizar, para el ejercicio 1.i), el impacto de la fase global de los autovalores. Para ello, se decidió comparar el circuito con los operadores unitarios de rotación $Z$ y $Rz(\pi)$. Esto se debe a que estos operadores, presentes en el ejercicio 1.i), solo se diferencian entre sí en su fase global y considero que es la forma más directa de notar su efecto.
 
 A continuación, se recuerda la implementación del circuito para ambos operadores unitarios:
 
@@ -149,23 +139,9 @@ Cada iteración de Grover ($G = D \cdot U_\omega$) se compone de dos etapas:
 1. **Oráculo ($U_\omega$):** Invierte la fase de los estados solución $|x\rangle$ tales que $f(x) = 1$, aplicando la transformación $|x\rangle \mapsto (-1)^{f(x)}|x\rangle$.
 2. **Operador de Difusión ($D$):** Realiza una inversión sobre la amplitud media mediante el operador $2|s\rangle\langle s| - I$ (o equivalente salvo fase global $I - 2|s\rangle\langle s|$), amplificando constructivamente la probabilidad de medir los estados marcados.
 
-## Ejercicios
+Con el fundamento teórico presentado, se prosigue con la resolución de los ejercicios.
 
-El práctico pide la reoslución de los siguientes ejercicios:
-
-1. Implemente el algoritmo de Grover con el siguiente oráculo (Detector):
-
-  i. CCZ de 3 qubits
-
-  ii. CCCCZ de 5 qubits
-
-2. Implemente 1.i) y 1.ii) para diferente cantidad de iteraciones Oráculo-Grover.
-
-3. Implemente el algoritmo Grover para la función booleana x2’x1.x0. Determine el número ideal de iteraciones Oráculo-Grover. Justifique su respuesta.
-
-4. Implemente el algoritmo Grover para la función booleana vista en la teoría, x2’x1’x0 + x2.x1.x0’. Determine el número ideal de iteraciones Oráculo-Grover. Justifique respuesta
-
-### Pasos Previos
+## Pasos Previos
 
 Previo a realizar la resolución de los ejercicios presentados anteriormente, es necesario definir algunas funciones. Una de ellas es una función que permita obtener el operador de Grover para $n$. A continuación, se presenta el circuito resultante de la función para $n = 4$.
 
@@ -173,95 +149,93 @@ Previo a realizar la resolución de los ejercicios presentados anteriormente, es
 
 Con la función generadora del operador de Grover realizada, se procede con la resolución de los ejercicios.
 
-### Ejercicio 1
+{{< pagebreak >}}
+
+## Ejercicio 1
 
 El ejercicio pide implemente el algoritmo de Grover para dos oráculos (detectores).
 
-#### Inciso i)
+### Inciso i)
 
 El primer oráculo es un CCZ de 3 qubits. A continuación, se presenta su implementación:
 
-![](assets/figures/grover/resoluciones-ejercicio_1-inciso_i.svg){#fig-grover-inciso-i width=90%}
+![Circuito correspondiente al oráculo CCZ de 3 qubits.](assets/figures/grover/resoluciones-ejercicio_1-inciso_i.svg){width=30%}
 
 El algoritmo de Grover para el anterior oráculo, con una única iteración, se presenta a continuación:
 
-![](assets/figures/grover/resoluciones-ejercicio_1-inciso_i-2.svg){#fig-grover-inciso-i-2 width=90%}
+![Algoritmo de Grover (una iteración) para el oráculo CCZ de 3 qubits (abstracción alta).](assets/figures/grover/resoluciones-ejercicio_1-inciso_i-2.svg){width=40%}
 
 Para corroborar el correcto funcionamiento de la implementación, se realizó una simulación con 2000 shots. Se presenta el histograma con los resultados obtenidos:
 
-![](assets/figures/grover/resoluciones-ejercicio_1-inciso_i-3.svg){#fig-grover-inciso-i-3 width=90%}
+![Histograma correspondiente a la eveluación del algoritmo de Grover anterior con 2000 shots.](assets/figures/grover/resoluciones-ejercicio_1-inciso_i-3.svg){width=50%}
 
 Como puede observarse, la implementación funciona correctamente, pues el resultado que se evidencia es 111, que corresponde con la solución del circuito.
 
-#### Inciso ii)
+### Inciso ii)
 
 El segundo oráculo es un CCCCZ de 5 bits. A continuación, se presenta su implementación:
 
-![](assets/figures/grover/resoluciones-ejercicio_1-inciso_ii.svg){#fig-grover-inciso-ii width=90%}
+![Circuito correspondiente al oráculo CCCCZ de 5 qubits.](assets/figures/grover/resoluciones-ejercicio_1-inciso_ii.svg){width=30%}
 
-El algoritmo de Grover para el anterior oráculo, con una única iteración, se presenta a continuación:
-
-![](assets/figures/grover/resoluciones-ejercicio_1-inciso_ii-2.svg){#fig-grover-inciso-ii-2 width=90%}
+El algoritmo de Grover para el anterior oráculo, con una única iteración, se presenta a continuación se visualiza igual al algoritmo presentado en el inciso i). Por consiguiente, para no sobrecargar el informe, este no se muestra. La representación visual a un nivel alto de abstracción, para una única iteración, es siempre la misma. Lo que cambia es el oráculo y la cantidad de qubits sobre los cuales el operador de Grover opera.
 
 Para corroborar el correcto funcionamiento de la implementación, se realizó una simulación con 2000 shots. Se presenta el histograma con los resultados obtenidos:
 
-![](assets/figures/grover/resoluciones-ejercicio_1-inciso_ii-2.svg)
+![Histograma correspondiente a la evaluación del algoritmo de Grover anterior con 2000 shots.](assets/figures/grover/resoluciones-ejercicio_1-inciso_ii-3.svg){width=50%}
 
 Como puede observarse, la implementación funciona correctamente, pues el resultado que se evidencia es 11111, que corresponde con la solución del circuito.
 
-### Ejercicio 2
+{{< pagebreak >}}
+
+## Ejercicio 2
 
 Se pide repetir los incisos anteriores pero variando el número de iteraciones. Debido a que no se especifica entre qué valores variarlo, se decidió arbitrariamente que la variación se realizará entre los valores del conjunto $\{1, 2, 3, 4, 5, 6, 7, 8, 9\}\$.
 
-#### Inciso i)
+### Inciso i)
 
 El oráculo de este ejercicio es CCZ, de tres bits. A continuación, se muestran los histogramas resultantes de la ejecución para las distintas variaciones:
 
-![](assets/figures/grover/resoluciones-ejercicio_2-inciso_i.svg)
+![Histogramas correspondientes a la ejecución del algoritmo de Grover con oráculo CCZ para 1..9 iteraciones.](assets/figures/grover/resoluciones-ejercicio_2-inciso_i.svg){width=80%}
 
 Como es posible observar, los mejores resultados se obtienen con seis iteraciones. No obstante, es necesario evaluar si un número tan elevado de iteraciones es conveniente. Esto debido a que cada iteración añade lógica al circuito que puede impactar en su tiempo de ejecución, compuertas nativas, costo, entre otros. Una iteración o dos iteraciones ya pueden considerarse lo suficientemente buenas y no se requiere llegar a seis para llegar a un resultado quasi-perfecto.
 
-#### Inciso ii)
+### Inciso ii)
 
 El oráculo de este inciso es CCCCZ, de cinco bits, cuya implementación para una iteración ya se mostró en el ejercicio 1. A continuación, se muestran los histogramas resultantes de la ejecución para las distintas variaciones definidas:
 
-![](assets/figures/grover/resoluciones-ejercicio_2-inciso_ii.svg)
+![Histogramas correspondientes a la ejecución del algoritmo de Grover con oráculo CCCCZ para 1..9 iteraciones.](assets/figures/grover/resoluciones-ejercicio_2-inciso_ii.svg){width=90%}
 
 Los mejores resultados se obtienen para 4 (cuatro) iteraciones. Sin embargo, al igual que como se planteó anteriormente, ¿vale la pena añadir lógica adicional para mejorar un resultado que con un número menor de iteraciones ya es lo suficientemente bueno? Yo creo que no. Por ello, en base a los gráficos presentados anteriormente, determino que el número ideal de iteraciones Oráculo-Grover puede ser uno o dos, dependiendo del número de shots que se planean realizar.
 
-### Ejercicio 3
+{{< pagebreak >}}
+
+## Ejercicio 3
 
 Se pide implementar el algoritmo Grover para la función booleana $x_2’x_1.x_0$ y, posteriormente, determinar el número ideal de iteraciones Oráculo-Grover. A continuación, se presenta la implementación del oráculo:
 
-![](assets/figures/grover/resoluciones-ejercicio_3.svg)
+![Circuito correspondiente al oráculo que describe la función booleana $x_2’x_1.x_0$.](assets/figures/grover/resoluciones-ejercicio_3.svg){width=30%}
 
-Luego, se construye el algoritmo de Grover, con el operador y el oráculo como cajas negras.
+Luego, se construye el algoritmo de Grover, con el operador y el oráculo como cajas negras. A continuación, se visualizan los histogramas del resultado de este último para las nueve variaciones definidas en el ejercicio 2.
 
-![](assets/figures/grover/resoluciones-ejercicio_3-2.svg)
-
-A continuación, se visualizan los histogramas para las nueve variaciones definidas en el ejercicio 2.
-
-![](assets/figures/grover/resoluciones-ejercicio_3-3.svg)
+![Histogramas correspondientes a la ejecución del algoritmo de Grover con oráculo $x_2’x_1.x_0$ para 1..9 iteraciones.](assets/figures/grover/resoluciones-ejercicio_3-3.svg){width=90%}
 
 De acuerdo a los histogramas, el número perfecto de iteraciones es 6 (seis). No obstante, como se planteó ya en los anteriores ejercicios, no considero justificada la adhisión de tanta lógica adicional cuando el resultado con menos iteraciones ya es lo suficientemente bueno. Por ello, considero que el número ideal de iteraciones Oráculo-Grover es uno o dos (en base solo a los histogramas), dependiendo del número de shots que se esté dispuesto a realizar. Solo utilizaría seis instancias si el número de shots es muy reducido.
 
 Teóricamente, con $N = 8$ estados (por tener 3 qubits, lo cual genera $2^3 = 8$ estados) y $M = 1$ solución, el ángulo de rotación por iteración cumple $\sin\theta = \sqrt{M/N} = 1/\sqrt{8}$, es decir, $\theta \approx 0{,}361$ rad. La probabilidad de medir el estado buscado tras $k$ iteraciones es $\sin^2((2k+1)\theta)$, que se maximiza para $k \approx \frac{\pi}{4}\sqrt{N/M} - \frac{1}{2} \approx 1{,}7$, es decir, $k = 2$ iteraciones, con una probabilidad de aproximadamente $94{,}5\%$ (con $k = 1$ es de aproximadamente $78{,}1\%$). Que $k = 6$ dé un resultado cercano al $100\%$ es una coincidencia numérica, ya que $13\theta \approx \frac{3\pi}{2}$, y no el óptimo del algoritmo. Esto respalda la elección visual de dos iteraciones como el número ideal.
 
-### Ejercicio 4
+{{< pagebreak >}}
 
-Se pide implementar el algoritmo Grover para la función booleana `x2’x1’x0 + x2.x1.x0’`, determinar el número ideal de iteraciones Oráculo-Grover y justificar la respuesta.
+## Ejercicio 4
+
+Se pide implementar el algoritmo Grover para la función booleana $x2'x1'x0 + x2.x1.x0'$, determinar el número ideal de iteraciones Oráculo-Grover y justificar la respuesta.
 
 Como primer paso, se define el oráculo que permita detectar la función. La función `x2’x1’x0 + x2.x1.x0’` vale 1 para dos entradas: $x_2x_1x_0 = 001$ y $x_2x_1x_0 = 110$. Al igual que en el ejercicio anterior, se utiliza un oráculo de fase: cada término se marca por separado, negando los qubits necesarios para convertir el estado buscado en $|111\rangle$, aplicando una CCZ y restableciendo luego los qubits. Como cada término corresponde a un estado distinto, el orden en que se aplican no importa. Así, la implementación del circuito propuesto es la siguiente:
 
-![](assets/figures/grover/resoluciones-ejercicio_4.svg)
+![Circuito correspondiente al oráculo que describe la función booleana $x2'x1'x0 + x2.x1.x0'$.](assets/figures/grover/resoluciones-ejercicio_4.svg){width=40%}
 
-Considerando el anterior oráculo, el algoritmo de Grover resultante, con el oráculo y el operador de Grover como cajas negras, es el siguiente:
+Considerando el anterior oráculo, se construye el algoritmo de Grover. A continuación, se presentan los histogramas resultantes de la ejecución de este último para las nueve variaciones definidas en el ejercicio 2:
 
-![](assets/figures/grover/resoluciones-ejercicio_4-2.svg)
-
-A continuación, se presentan los histogramas resultantes de la ejecución del circuito para las nueve variaciones definidas en el ejercicio 2:
-
-![](assets/figures/grover/resoluciones-ejercicio_4-3.svg)
+![Histogramas correspondientes a la ejecución del algoritmo de Grover con oráculo $x2'x1'x0 + x2.x1.x0'$ para 1..9 iteraciones.](assets/figures/grover/resoluciones-ejercicio_4-3.svg){width=60%}
 
 Una única iteración es suficiente para alcanzar resultados muy buenos. Añadir más iteraciones no solo empeora el resultado (salvo que el número de iteraciones pueda describirse mediante la fórmula $1 + 3k$, donde $k \geq 0$), sino que añade complejidad innecesaria al circuito.
 
@@ -273,20 +247,20 @@ Esto puede justificarse teóricamente. Con $N = 8$ estados y $M = 2$ soluciones,
 
 # Conclusiones
 
-A lo largo del desarrollo de estos trabajos prácticos, se profundizó en dos de los algoritmos más emblemáticos de la computación cuántica: la Estimación de Fase Cuántica (QPE) y la búsqueda de Grover. Su implementación en Qiskit permitió verificar empíricamente fenómenos puramente cuánticos como el _phase kickback_, la interferencia constructiva y destructiva de amplitudes, y el carácter periódico de las rotaciones en el subespacio de Hilbert.
+A lo largo del desarrollo de estos trabajos prácticos, se profundizó en dos algoritmos de la computación cuántica: la Estimación de Fase Cuántica (QPE) y la búsqueda de Grover. Su implementación en Qiskit permitió observar fenómeno como el _phase kickback_ (y el efecto de la fase global sobre este), la interferencia constructiva y destructiva de amplitudes, y el carácter periódico de las rotaciones.
 
 {{< pagebreak >}}
 
 # Transparencia
 
-Se utilizó IA generativa (en particular, Claude Code y DeepSeek) para:
+Se utilizó IA generativa (en particular, Claude, DeepSeek y Gemini) para:
 
-- profundizar sobre algunos conceptos;
+- profundizar sobre algunos conceptos (por ejemplo, el _phase kickback_);
 - generar el código encargado de generar las tablas utilizadas en el informe;
 - generar el código encargado de agrupar los distintos circuitos y evaluaciones en un único mosaico; y
 - realizar una revisión general del práctico y del informe en busca de _bugs_ que hayan pasado desapercibidos en el código y errores ortográficos en las redacciones.
 
-El resto de la resolución, tanto en lo que respecta a las _notebooks_ como al informe, en cuanto código, conclusiones y redacción, son propias.
+**Exceptuando lo mencionado, el resto de la resolución, tanto en lo que respecta a las _notebooks_ como al informe, en cuanto código, conclusiones y redacción, son propias**.
 
 {{< pagebreak >}}
 

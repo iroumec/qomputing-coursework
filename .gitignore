@@ -188,3 +188,6 @@ pyrightconfig.json
 
 # Outputs.
 outputs/
+
+# Entregas empaquetadas
+dist/

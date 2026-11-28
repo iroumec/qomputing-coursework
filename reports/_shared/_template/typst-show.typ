@@ -1,3 +1,11 @@
+$-- Puente entre el YAML de Quarto y los parámetros de `article()` en
+$-- typst-template.typ.
+$--
+$-- Para agregar una variable nueva hay que tocar TRES lugares:
+$--   1. el front matter del informe o `_quarto.yml` (ej. `mi-variable: ...`),
+$--   2. este archivo (mapearla a un parámetro de `article()`),
+$--   3. la firma de `article()` en typst-template.typ.
+$-- Si falta el paso 3, Typst falla con "unexpected argument".
 #show: doc => article(
 $if(title)$
   title: [$title$],

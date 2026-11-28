@@ -41,6 +41,7 @@ make reports-list       # lista informes, notebooks y cantidad de figuras
 make report-new NAME=qft TITLE="Práctica: QFT" NOTEBOOKS="practicos/qft.ipynb"
 make report-sync        # actualiza plantilla y logos de $(REPORT)
 make report-sync REPORT=   # ídem para todos los informes
+make pack               # ZIP de entrega en dist/
 ```
 
 `REPORT` vale `reports/qpe-grover/informe.qmd` por defecto; se puede pasar otro:
@@ -117,6 +118,63 @@ Detalles:
 - **Rutas.** `notebooks:` se resuelve respecto de la carpeta del informe; `make report-new` convierte automáticamente `practicos/x.ipynb` a `../../practicos/x.ipynb`.
 
 Dependencias necesarias (ya incluidas en `requirements.txt`): `nbclient`, `nbformat` y `PyYAML`.
+
+## Tamaño de las figuras
+
+Se puede indicar `width`, `height` o ambos:
+
+```markdown
+![Solo ancho.](assets/figura.svg){width=60%}
+![Solo alto.](assets/figura.svg){height=5cm}
+![Caja máxima.](assets/figura.svg){width=90% height=5cm}
+```
+
+- **Una dimensión:** la imagen se escala proporcionalmente.
+- **Ambas:** funcionan como una caja. La imagen se escala proporcionalmente hasta entrar en ella, sin deformarse; manda la restricción más ajustada. La caja se ajusta al tamaño real de la imagen, así que no queda espacio en blanco antes del epígrafe.
+- Acepta unidades de Typst: `cm`, `mm`, `in`, `pt` y porcentajes (`width=50%`).
+- El epígrafe mantiene siempre el ancho del texto (92 %), independientemente del tamaño de la imagen.
+
+## Espaciado
+
+El espacio antes y después de los títulos lo define la plantilla, no el Markdown: dejar una línea en blanco en el `.qmd` no agrega altura. Para cambiar la separación se ajustan los valores `below` (después del título) y `above` (antes) de los `show heading.where(level: ...)` en `_shared/_template/typst-template.typ` y se corre `make report-sync REPORT=`.
+
+## Empaquetar la entrega
+
+```bash
+make pack
+```
+
+Genera `dist/<informe>.zip` con:
+
+```text
+qpe-grover/
+├── Informe.pdf
+├── practicos/qpe.ipynb
+├── practicos/grover.ipynb
+└── requirements.txt
+```
+
+Los notebooks son los declarados en `notebooks:` del front matter, y el PDF tiene que existir (`make report` primero). Se puede cambiar la salida con `DIST=...` y elegir otro informe con `REPORT=...`.
+
+## Notas de diseño y trampas (para mantenimiento)
+
+Estas son las decisiones y los errores que costó descubrir; están resumidas también como comentarios en `reports/_scripts/reports.py` y en `_shared/_template/typst-template.typ`.
+
+- **Sandbox de Typst.** La plantilla y los logos tienen que estar dentro de la carpeta del informe: Typst no puede leer fuera de su raíz (“path would escape the project root”). Por eso `_template/` y los logos se copian con `sync`. Los parciales sí se comparten porque los inserta Pandoc (`{{< include ../_shared/... >}}`) antes de llamar a Typst.
+- **El guion bajo no es decorativo.** Quarto ignora archivos y carpetas que empiezan con `_`: así `_shared` y `_scripts` no se renderizan. Cuidado al probar: un `.qmd` de prueba llamado `_prueba.qmd` se compila **con el formato por defecto e ignora el `_quarto.yml` del informe**. Usá un nombre sin `_` (`tmp-prueba.qmd`) y borralo después.
+- **`width` + `height` en imágenes.** Typst reserva una caja de ese tamaño y centra la imagen escalada adentro; el espacio sobrante empuja el epígrafe hacia abajo. La plantilla reescribe la imagen a su tamaño proporcional exacto (ver `figure-image-size` y el `show figure`).
+- **`measure()` y los porcentajes.** Devuelve ancho 0 para `width: 45%`. Para resolver un relativo se lee el campo de la imagen (`content.at("width")`) y se combina `length.ratio` con el tamaño disponible de `layout(...)`.
+- **Campos de contenido.** En una función genérica no sirve `content.width`: hay que ir por `content.at("width", default: auto)`. Para inspeccionar qué trae un contenido, `content.fields()`.
+- **Show rules y recursión.** Una regla no se reaplica al elemento que devuelve, pero sí a los elementos nuevos que construye. El `show image` interno necesita comparar `source` y dimensiones para cortar (“maximum show rule depth exceeded”).
+- **Ancho del epígrafe.** Es fijo (92 % del texto) a propósito. No envolver la figura en un `block(width: 45%)` para “acompañar” la imagen: ese porcentaje se resolvería dos veces y la imagen se achicaría.
+- **Espaciado.** Los espacios alrededor de títulos y figuras los define la plantilla; las líneas en blanco del Markdown no agregan altura. Ver los `show heading.where(level: ...)`.
+- **Agregar una variable YAML.** Hay que tocar tres lugares: el front matter (o `_quarto.yml`), `_template/typst-show.typ` (mapearla a un parámetro) y la firma de `article()` en `typst-template.typ`. Si falta el tercero, Typst falla con “unexpected argument”.
+- **`_quarto.yml` no se sincroniza.** `make report-new` copia `_shared/_quarto.yml.template`, pero `sync` no lo actualiza en informes existentes para no pisar configuraciones propias.
+- **Nombres de figuras.** Salen de la pila de encabezados (se ignora el `#`). Renombrar figuras **rompe las referencias del `.qmd`**: el script avisa `viejo → nuevo`, pero no las reescribe. Si se cambia el criterio, subir `EXTRACTOR_VERSION` para invalidar la caché.
+- **SVG vs PNG.** Las figuras de matplotlib salen SVG. Las celdas que arman la imagen con `fig.savefig(..., format="png")` o `display(Image(...))` quedan PNG: matplotlib no compone SVG (tablas y mosaicos de `qpe.ipynb`).
+- **Referencias a imágenes.** El script no valida el `.qmd`; si falta una imagen, Typst falla con “file not found”. Revisar que cada `![](assets/...)` exista antes de empacar.
+- **Errores que no son errores.** El aviso de IPKernelApp sobre TCP sin cifrado es normal. `pdfinfo` puede imprimir “Suspects object is wrong type” con PDFs de Typst; es un detalle de poppler.
+- **ZIP de entrega.** `make pack` no compila: exige `informe.pdf`. Conserva la ruta de los notebooks dentro del repo (`practicos/...`) porque es la que menciona el informe.
 
 ## Guía de escritura
 

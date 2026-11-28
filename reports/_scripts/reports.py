@@ -37,6 +37,10 @@ logos [--source RUTA] [--name NOMBRE]
     lo guarda como logo de portada en `_shared/assets/logos/` y lo propaga
     a todos los informes.
 
+pack [INFORME ...] [--out DIR]
+    Arma un ZIP por informe con el PDF compilado, los notebooks declarados en
+    el front matter y `requirements.txt`. Por defecto lo deja en `dist/`.
+
 list
     Lista los informes, sus notebooks y las figuras extraídas.
 
@@ -46,6 +50,28 @@ Ejemplos
     .venv/bin/python reports/_scripts/reports.py figures
     .venv/bin/python reports/_scripts/reports.py new qft --title "Práctica: QFT" \\
         --notebook practicos/qft.ipynb
+
+Notas de mantenimiento
+----------------------
+* Este archivo y `reports/README.md` documentan las decisiones y las trampas
+  encontradas, para no depender del historial de la conversación.
+* `EXTRACTOR_VERSION` forma parte de la clave de caché: subilo cuando cambie el
+  criterio de nombres o la forma de extraer figuras.
+* Los notebooks se ejecutan en memoria: el `.ipynb` original nunca se modifica.
+  La salida SVG se logra con un profile temporal de IPython
+  (`c.InlineBackend.figure_formats = {'svg'}`). Las celdas que arman la imagen a
+  mano con `fig.savefig(..., format="png")` o `display(Image(...))` quedan como
+  PNG, porque matplotlib no puede componer SVG (es el caso de las tablas y los
+  mosaicos de `qpe.ipynb`).
+* El nombre de cada figura sale de la pila de encabezados: se ignora el `#` y se
+  concatenan los niveles con `-`, usando `_` en lugar de espacios
+  (`ejercicio_1-resolucion-inciso_i.svg`). Si un nombre cambia, las referencias
+  del `.qmd` se rompen: el script avisa `viejo → nuevo`, pero no las reescribe.
+* `sync` copia y SOBRESCRIBE plantilla y logos, pero nunca `_quarto.yml` ni
+  `informe.qmd`. Los parciales no se copian: se incluyen desde `_shared`.
+* `pack` no compila: exige el PDF ya generado (`make report`).
+* Si Typst falla con "file not found", hay una imagen referenciada en el `.qmd`
+  que no existe. Este script no valida las referencias del documento.
 """
 
 from __future__ import annotations
@@ -60,6 +86,7 @@ import shutil
 import sys
 import tempfile
 import unicodedata
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -104,7 +131,12 @@ def slugify(text: str, maxlen: int = 48, separator: str = "-") -> str:
 def heading_slug(
     chain: tuple[str, ...], max_component: int = 48, max_total: int = 100
 ) -> str:
-    """Concatena la jerarquía de secciones: `ejercicio_1-resolucion-inciso_1`."""
+    """Concatena la jerarquía de secciones: `ejercicio_1-resolucion-inciso_1`.
+
+    Convención acordada: `_` reemplaza los espacios dentro de una sección y los
+    niveles se unen con `-`. Si el total supera `max_total`, se descartan las
+    secciones de más arriba (se conserva la parte más específica).
+    """
     parts = [slugify(title, max_component, separator="_") for title in chain if title]
     while len(parts) > 1 and len("-".join(parts)) > max_total:
         parts.pop(0)  # conserva las secciones más específicas
@@ -183,6 +215,14 @@ def copy_tree(
 
 
 def sync_report(report_dir: Path) -> list[Path]:
+    """Copia plantilla y logos; nunca toca `_quarto.yml` ni `informe.qmd`.
+
+    - `_template/` se SOBRESCRIBE: la fuente de verdad es `_shared`.
+    - los logos también se sobrescriben (para poder reemplazarlos con
+      `make logos`), salvo los que no estén en `_shared`.
+    - `.gitignore` solo se crea si falta.
+    - los parciales NO se copian: se incluyen desde `_shared` en el `.qmd`.
+    """
     changed: list[Path] = []
     changed += copy_tree(
         SHARED / "_template", report_dir / "_template", exclude=("*.template",)
@@ -253,7 +293,13 @@ def sync_reports(args) -> None:
 
 
 def import_logo(source: Path, name: str, margin: float = 0.02) -> Path:
-    """Recorta un logo con transparencia y lo deja en `_shared/assets/logos/`."""
+    """Recorta un logo con transparencia y lo deja en `_shared/assets/logos/`.
+
+    El archivo de origen suele venir con mucho margen transparente (el logo
+    original de `images/`). Se recorta el bounding box del canal alfa y se deja
+    un margen mínimo (2 %) para que no quede pegado al borde. Después se
+    propaga a todos los informes con `sync_report`.
+    """
     try:
         from PIL import Image
     except ImportError:  # pragma: no cover
@@ -290,7 +336,18 @@ def import_logo(source: Path, name: str, margin: float = 0.02) -> Path:
 def execute_notebook(nb, nb_path: Path, timeout: int) -> None:
     """Ejecuta el notebook en memoria con salida SVG de IPython.
 
-    El archivo .ipynb original nunca se modifica.
+    El archivo .ipynb original nunca se modifica: nbclient trabaja sobre una
+    copia en memoria.
+
+    El formato SVG no se puede pedir por parámetro al kernel: se configura con
+    un profile temporal de IPython (`IPYTHONDIR` + `figure_formats`). Por eso se
+    crea un directorio temporal y se restaura la variable de entorno al salir.
+    El aviso de IPKernelApp sobre TCP sin cifrado es normal y no afecta nada.
+
+    `resources.metadata.path` fija el cwd del kernel a la carpeta del notebook
+    para que sus rutas relativas (por ejemplo `images/foo.png`) funcionen.
+    `allow_errors=True` permite seguir extrayendo el resto de las figuras aunque
+    una celda falle; los errores se listan en el manifiesto.
     """
     from nbclient import NotebookClient
 
@@ -467,6 +524,18 @@ def notebook_specs(meta: dict, qmd: Path) -> list[dict]:
 def process_notebook(
     spec: dict, qmd: Path, figures_dir_rel: str, force: bool, timeout: int
 ) -> int:
+    """Extrae las figuras de un notebook y actualiza el manifiesto y la caché.
+
+    Caché: la clave combina EXTRACTOR_VERSION + hash del notebook + carpeta de
+    salida. Si no cambió nada, no se vuelve a ejecutar (19 s por notebook en
+    este repo). `--force` la ignora.
+
+    Si la ejecución falla (kernel ausente, sin Qiskit, timeout), se usan las
+    salidas ya guardadas en el `.ipynb`, así el informe se puede compilar igual.
+
+    La carpeta de figuras se borra antes de reescribirla: es material generado y
+    así no quedan archivos viejos con nombres anteriores.
+    """
     import nbformat
 
     nb_path: Path = spec["path"]
@@ -565,6 +634,63 @@ def run_figures(qmd: Path, force: bool, timeout: int) -> int:
     return total
 
 
+def pack_report(qmd: Path, out_dir: Path) -> Path:
+    """Arma el ZIP de entrega: informe PDF, notebooks declarados y requirements.
+
+    Estructura del ZIP (una carpeta con el nombre del informe):
+
+        <informe>/Informe.pdf
+        <informe>/practicos/qpe.ipynb      (ruta relativa al repo)
+        <informe>/requirements.txt
+
+    Se conserva la ruta de los notebooks dentro del repo para que coincida con
+    la que menciona el informe. No compila: exige el PDF ya generado.
+    """
+    meta = front_matter(qmd)
+    pdf = qmd.parent / "informe.pdf"
+    if not pdf.is_file():
+        sys.exit(
+            f"Falta {rel(pdf)}. Compilá el informe primero: "
+            f"make report REPORT={rel(qmd)}"
+        )
+
+    specs = notebook_specs(meta, qmd)
+    folder = qmd.parent.name
+    out_dir.mkdir(parents=True, exist_ok=True)
+    zip_path = out_dir / f"{folder}.zip"
+
+    added: list[str] = []
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.write(pdf, f"{folder}/Informe.pdf")
+        added.append(f"{folder}/Informe.pdf")
+
+        seen: set[Path] = set()
+        for spec in specs:
+            notebook = spec["path"].resolve()
+            if notebook in seen:
+                continue
+            seen.add(notebook)
+            try:
+                arcname = notebook.relative_to(ROOT)
+            except ValueError:
+                arcname = Path(notebook.name)
+            archive.write(notebook, f"{folder}/{arcname}")
+            added.append(f"{folder}/{arcname}")
+
+        requirements = ROOT / "requirements.txt"
+        if requirements.is_file():
+            archive.write(requirements, f"{folder}/requirements.txt")
+            added.append(f"{folder}/requirements.txt")
+
+    size = zip_path.stat().st_size / 1024
+    print(f"+ {rel(zip_path)} ({size:.0f} KB)")
+    for name in added:
+        print(f"    {name}")
+    if not specs:
+        print("! El informe no declara notebooks: el ZIP solo tiene el PDF.")
+    return zip_path
+
+
 def list_reports() -> None:
     reports = find_reports([])
     if not reports:
@@ -620,6 +746,10 @@ def main() -> None:
         help="Nombre del destino en _shared/assets/logos/",
     )
 
+    pack = sub.add_parser("pack", help="Arma el ZIP de entrega")
+    pack.add_argument("reports", nargs="*", help="Carpetas de informe (por defecto: todas)")
+    pack.add_argument("--out", default="dist", help="Carpeta de salida (por defecto: dist/)")
+
     sub.add_parser("list", help="Lista informes y figuras")
 
     args = parser.parse_args()
@@ -633,6 +763,12 @@ def main() -> None:
         new_report(args)
     elif args.command == "sync":
         sync_reports(args.reports)
+    elif args.command == "pack":
+        out_dir = Path(args.out)
+        if not out_dir.is_absolute():
+            out_dir = ROOT / out_dir
+        for qmd in find_reports(args.reports):
+            pack_report(qmd.resolve(), out_dir)
     elif args.command == "logos":
         import_logo(ROOT / args.source, args.name)
     else:

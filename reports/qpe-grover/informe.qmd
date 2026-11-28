@@ -169,7 +169,7 @@ El práctico pide la reoslución de los siguientes ejercicios:
 
 Previo a realizar la resolución de los ejercicios presentados anteriormente, es necesario definir algunas funciones. Una de ellas es una función que permita obtener el operador de Grover para $n$. A continuación, se presenta el circuito resultante de la función para $n = 4$.
 
-![Implementación del operador de Grover para 4 bits](assets/figures/grover/resoluciones-ejercicio_1.svg){#fig-grover-resoluciones-ejercicio-1 height=50% width=90%}
+![Implementación del operador de Grover para 4 bits](assets/figures/grover/resoluciones-ejercicio_1.svg){height=50% width=60%}
 
 Con la función generadora del operador de Grover realizada, se procede con la resolución de los ejercicios.
 

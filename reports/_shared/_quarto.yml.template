@@ -1,4 +1,9 @@
-# Configuración global de Quarto para los informes en reports/
+# Configuración global de Quarto para los informes en reports/.
+# Este archivo es la PLANTILLA: `make report-new` lo copia como `_quarto.yml`
+# del informe nuevo. `make report-sync` NO lo actualiza en informes existentes
+# (para no pisar ajustes propios), así que si cambiás algo acá y querés que
+# llegue a todos, copialo a mano.
+# Las rutas de `template-partials` son relativas a la carpeta del informe.
 lang: es
 cursada: "Cursada 2026"
 materia: "Algoritmos Avanzados de Computación Cuántica"

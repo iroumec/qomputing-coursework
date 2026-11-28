@@ -1,9 +1,10 @@
 PY := .venv/bin/python
 REPORT ?= reports/qpe-grover/informe.qmd
 SOURCE ?= images/logo-no-background.png
+DIST ?= dist
 REPORTS_PY := reports/_scripts/reports.py
 
-.PHONY: create-env freeze figures report reports report-new report-sync reports-list logos quarto-render quarto-preview
+.PHONY: create-env freeze figures report reports report-new report-sync reports-list logos pack quarto-render quarto-preview
 
 create-env:
 	python3 -m venv .venv
@@ -12,18 +13,25 @@ freeze:
 	$(PY) -m pip freeze > requirements.txt
 
 # --- Informes ---------------------------------------------------------------
+# `.PHONY` es obligatorio: el target `reports` choca con la carpeta `reports/`
+# y make lo tomaría como "up to date" sin ejecutar nada.
 # make reports       Extrae figuras y compila todos los informes.
 # make report        Extrae figuras y compila $(REPORT).
 # make figures       Solo extrae las figuras de los notebooks de $(REPORT).
 # make report-new    Crea reports/$(NAME)/ a partir de la plantilla común.
 # make report-sync   Actualiza plantilla y logos (REPORT= para todos).
 # make reports-list  Lista informes, notebooks y cantidad de figuras.
+# make pack          ZIP de entrega: PDF + notebooks + requirements.
 figures:
 	$(PY) $(REPORTS_PY) figures $(REPORT)
 
 # Importa el logo de portada desde images/ y lo propaga a los informes.
 logos:
 	$(PY) $(REPORTS_PY) logos --source "$(SOURCE)"
+
+# ZIP de entrega: PDF + notebooks declarados + requirements.txt.
+pack:
+	$(PY) $(REPORTS_PY) pack $(REPORT) --out "$(DIST)"
 
 report: figures
 	quarto render $(REPORT)

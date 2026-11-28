@@ -1,7 +1,37 @@
 // ============================================================================
 // typst-template.typ
 // Plantilla académica con estética cuántica para informes de
-// Fundamentos de la Computación Cuántica (EXA - UNICEN)
+// Algoritmos Avanzados de Computación Cuántica (EXA - UNICEN)
+//
+// NOTAS DE DISEÑO (leer antes de tocar)
+// ----------------------------------------------------------------------------
+// * Sandbox de Typst: la plantilla debe vivir DENTRO del proyecto de cada
+//   informe. Typst no puede leer archivos fuera de su raíz ("path would escape
+//   the project root"). Por eso `_template/` y los logos se copian a cada
+//   informe con `make report-sync`. Las secciones comunes (`_partials/`) sí se
+//   comparten: se incluyen con `{{< include ../_shared/_partials/... >}}` y
+//   Pandoc las inserta antes de invocar a Typst, así que no pasan por el
+//   sandbox.
+//
+// * `width` + `height` en una imagen: Typst reserva una caja de ese tamaño y
+//   dibuja la imagen escalada y centrada adentro. El espacio que sobra dentro
+//   de la caja separa el epígrafe de la imagen. Lo resuelve
+//   `figure-image-size` + el `show figure` de más abajo, que reescriben la
+//   imagen a su tamaño proporcional exacto.
+//
+// * `measure()` devuelve ancho 0 para tamaños relativos (`45%`). Para resolver
+//   un relativo hay que leer el campo de la imagen (`fields()` / `at`) y
+//   combinar `length.ratio` con el tamaño disponible que da `layout(...)`.
+//
+// * Los campos de un elemento `image` no se leen como `content.width` cuando
+//   el contenido es genérico: hay que usar `content.at("width", default: auto)`.
+//
+// * El espaciado vertical de títulos, párrafos y figuras se define acá. Las
+//   líneas en blanco del Markdown NO agregan altura.
+//
+// * Un show rule no se reaplica al elemento que devuelve, pero sí a los
+//   elementos nuevos que construye: el `show image` interno necesita un guard
+//   (compara source y dimensiones) para no recursar infinito.
 // ============================================================================
 
 #let quantum-banner(height: 15pt) = {
@@ -25,6 +55,85 @@
       place(top, line(length: 100%, stroke: 0.6pt + rgb("#155e4b")))
       place(bottom, line(length: 100%, stroke: 0.6pt + rgb("#155e4b")))
     }
+  )
+}
+
+// Devuelve la primera imagen que haya dentro de un contenido (la figura que
+// genera Quarto es `[#box(image(...))]`): (source, width, height) o `none`.
+//
+// Recorre `body`, `child` y `children` porque el cuerpo puede venir envuelto en
+// cajas o secuencias. Ojo: los campos de una imagen no se leen como
+// `content.width` cuando el contenido es genérico; van por `at()`.
+#let image-info(content) = {
+  if content == none {
+    return none
+  }
+  if content.func() == image {
+    return (
+      source: content.at("source"),
+      width: content.at("width", default: auto),
+      height: content.at("height", default: auto),
+    )
+  }
+  if content.has("body") {
+    let found = image-info(content.body)
+    if found != none {
+      return found
+    }
+  }
+  if content.has("child") {
+    let found = image-info(content.child)
+    if found != none {
+      return found
+    }
+  }
+  if content.has("children") {
+    for child in content.children {
+      let found = image-info(child)
+      if found != none {
+        return found
+      }
+    }
+  }
+  none
+}
+
+// Resuelve un largo relativo (`45%`) contra una base; los absolutos quedan
+// igual. `length.ratio` da la parte porcentual (0% si es absoluto) y el resto
+// (`length - length.ratio`) es la parte absoluta. No sirve `measure()` para
+// esto: devuelve 0 cuando el ancho es relativo.
+#let resolve-length(length, base) = {
+  if length.ratio == 0% {
+    length
+  } else {
+    (length - length.ratio) + base * length.ratio
+  }
+}
+
+// Tamaño que debe ocupar la imagen cuando fija `width` y `height` a la vez.
+// Typst, con las dos dimensiones, reserva una CAJA de ese tamaño y centra la
+// imagen escalada adentro (`fit: contain`), dejando espacio en blanco que
+// empuja el epígrafe hacia abajo. Acá se calcula el tamaño proporcional que
+// realmente entra en la caja (manda la restricción más ajustada) para
+// reescribir la imagen sin sobrante.
+// Devuelve `none` si falta alguna dimensión o no hay imagen: en ese caso Typst
+// ya escala proporcionalmente y no hay nada que corregir.
+#let figure-image-size(content, available) = {
+  let info = image-info(content)
+  if info == none {
+    return none
+  }
+  if info.width == auto or info.height == auto {
+    return none
+  }
+  let natural = measure(image(info.source))
+  let box-width = resolve-length(info.width, available.width)
+  let box-height = resolve-length(info.height, available.height)
+  let scale = calc.min(box-width / natural.width, box-height / natural.height)
+  (
+    source: info.source,
+    width: natural.width * scale,
+    height: natural.height * scale,
   )
 }
 
@@ -117,20 +226,24 @@
   // Numeración de secciones
   set heading(numbering: sectionnumbering)
 
-  //Jerarquía visual de encabezados (fiel a los informes en entregas/)
-  show heading.where(level: 1): it => block(above: 1.4em, below: 0.8em)[
+  // Jerarquía visual de encabezados (fiel a los informes en entregas/).
+  // `below` controla la separación entre el título y el texto que le sigue;
+  // `above`, la separación con el contenido anterior. Las líneas en blanco del
+  // Markdown no agregan espacio: si hace falta más aire, se cambian estos
+  // valores y se corre `make report-sync REPORT=` para propagarlos.
+  show heading.where(level: 1): it => block(above: 1.6em, below: 1.3em)[
     #set text(font: heading-family, size: 20pt, weight: "regular", fill: rgb("#000000"))
     #it
   ]
-  show heading.where(level: 2): it => block(above: 1.3em, below: 0.7em)[
+  show heading.where(level: 2): it => block(above: 1.5em, below: 1.15em)[
     #set text(font: heading-family, size: 15pt, weight: "regular", fill: rgb("#111111"))
     #it
   ]
-  show heading.where(level: 3): it => block(above: 1.2em, below: 0.6em)[
+  show heading.where(level: 3): it => block(above: 1.4em, below: 1em)[
     #set text(font: heading-family, size: 13pt, weight: "regular", fill: rgb("#555555"))
     #it
   ]
-  show heading.where(level: 4): it => block(above: 1.1em, below: 0.5em)[
+  show heading.where(level: 4): it => block(above: 1.3em, below: 0.9em)[
     #set text(font: heading-family, size: 12pt, weight: "bold", fill: rgb("#333333"))
     #it
   ]
@@ -147,6 +260,35 @@
     supplement: [Imagen],
     gap: 0.85em,
   )
+  // Si una imagen fija `width` y `height`, Typst deja una caja del tamaño pedido
+  // con la imagen centrada adentro: el espacio sobrante empuja el epígrafe
+  // lejos. Acá se reescribe la imagen a su tamaño proporcional exacto para que
+  // la caja coincida con lo dibujado. El `show image` interno necesita el guard
+  // de dimensiones: si no, la imagen nueva vuelve a entrar en la regla y
+  // recursa hasta "maximum show rule depth exceeded".
+  show figure: set block(above: 1.4em, below: 1.4em)
+  show figure: it => {
+    context layout(size => {
+      let target = figure-image-size(it.body, size)
+      if target == none {
+        return it
+      }
+      show image: img => {
+        if img.at("source") != target.source {
+          return img
+        }
+        if img.at("width", default: auto) == target.width and img.at("height", default: auto) == target.height {
+          return img
+        }
+        image(target.source, width: target.width, height: target.height)
+      }
+      it
+    })
+  }
+  // El epígrafe tiene ancho fijo (92 % del texto) a propósito, sin importar el
+  // tamaño de la imagen. No envolver la figura en un `block(width: ...)` para
+  // "ajustarlo": un ancho relativo de la imagen (`45%`) se resolvería dos veces
+  // y la imagen terminaría más chica.
   show figure.caption: it => context [
     #set par(justify: false, leading: 0.6em)
     #set align(center)
@@ -156,7 +298,12 @@
       ]
     ]
   ]
-  show figure: set block(above: 1.4em, below: 1.4em)
+
+  // Red de seguridad: si alguna imagen fija ambas dimensiones y no pasa por el
+  // ajuste de `show figure`, se escala proporcionalmente en lugar de deformarse
+  // (Typst, por defecto, estira cuando recibe width y height). La franja de la
+  // portada usa `fit: "stretch"` explícito y no se ve afectada.
+  set image(fit: "contain")
 
   // Estilo de tablas (encabezado oscuro y filas alternadas o limpias)
   set table(

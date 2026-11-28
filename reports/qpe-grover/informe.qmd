@@ -83,7 +83,7 @@ A continuación, se presentan los resultados de la evaluación de los circuitos 
 
 ![Resultados de la evaluación del circuito QPE para los distintos operadores unitarios, considerando $m = 1$ y $t = 6$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_iii-2.png){width=80%}
 
-Incrementar el registro de estimación a $t = 6$ qubits cuadruplica la resolución de la grilla ($\Delta\theta = 1/64$), permitiendo representar de forma exacta fases que en $t = 4$ quedaban truncadas. No obstante, en el práctico, **todas las fases obtenidas pueden representarse con 4 qubits de estimación**. Por consiguiente, como puede observarse en la tabla, el resultado no varía con respecto al inciso i). Los últimos qubits de estimación añadidos no son utilizados. Estos qubits no mejoran la aproximación, pues esta ya es precisa. Así, se concluye que el incremento de los qubits de estimación ($t$) de 4 a 6 no presenta una mejora en la precisión del valor de $\theta$ buscado.
+Incrementar el registro de estimación a $t = 6$ qubits cuadruplica la resolución de la grilla ($\Delta\theta = 1/64$), permitiendo representar de forma exacta fases que en $t = 4$ quedaban truncadas. No obstante, en el práctico, **todas las fases obtenidas pueden representarse con 4 qubits de estimación**. Por consiguiente, como puede observarse en la tabla, el resultado no varía con respecto al inciso i). Los últimos qubits de estimación añadidos no aportan información adicional. Estos qubits no mejoran la aproximación, pues esta ya es precisa. Así, se concluye que el incremento de los qubits de estimación ($t$) de 4 a 6 no presenta una mejora en la precisión del valor de $\theta$ buscado.
 
 ### Inciso iv)
 
@@ -243,13 +243,13 @@ Con base en el histograma, una única iteración pareciera ser suficiente para a
 
 Algo curioso sobre este ejercicio es que los gráficos se repiten cada 3 iteraciones: los gráficos 1, 4 y 7 son iguales; también lo son los gráficos 2, 5 y 8; y los 3, 6 y 9. La función utilizada para estos gráficos es la misma que la utilizada para los anteriores. No hay reutilización de datos y se revisó el código para verificar que no se haya cometido ningún error. Incluso, se probó con otras semillas y aumentando el número de iteraciones a 25 y el patrón se sigue repitiendo.
 
-Lo anterior puede justificarse teóricamente. Con $N = 8$ estados y $M = 2$ soluciones, $\sin\theta = \sqrt{M/N} = 1/2$, por lo que $\theta = \frac{\pi}{6}$. La probabilidad de medir un estado buscado tras $k$ iteraciones es $\sin^2\left((2k+1)\frac{\pi}{6}\right)$. Esta vale exactamente $1$ cuando $(2k+1)\frac{\pi}{6} = \frac{\pi}{2} + m\pi$, es decir, para $k = 1 + 3m$, que es la fórmula que se dedujo a partir de los gráficos. Además, al aumentar $k$ en 3 el argumento aumenta en $\pi$ y el seno al cuadrado no cambia. Esto último explica que los gráficos se repitan cada 3 iteraciones. Para $k = 2$ y $k = 3$ la probabilidad es $0{.}25$, lo cual tiene sentido con los histogramas obtenidos. El número ideal de iteraciones es, entonces, $k = 1$, ya que alcanza el $100\%$ con el menor costo.
+Lo anterior puede justificarse teóricamente. Con $N=8$ estados y $M=2$ soluciones, $\sin\theta = \sqrt{M/N} = 1/2$, por lo que $\theta = \frac{\pi}{6}$. La probabilidad de medir un estado buscado tras $k$ iteraciones es $\sin^2\left((2k+1)\frac{\pi}{6}\right)$. Esta vale exactamente $1$ cuando $(2k+1)\frac{\pi}{6} = \frac{\pi}{2} + m\pi$, es decir, para $k = 1 + 3m$, que es la fórmula que se dedujo a partir de los gráficos. Además, al aumentar $k$ en $3$, el argumento aumenta en $\pi$ y el seno al cuadrado no cambia. Esto último explica que los gráficos se repitan cada $3$ iteraciones. Para $k=2$ y $k=3$ la probabilidad es $0{,}25$, lo cual tiene sentido con los histogramas obtenidos. El número ideal de iteraciones es, entonces, $k=1$, ya que alcanza el $100\%$ con el menor costo.
 
 {{< pagebreak >}}
 
 # Conclusiones
 
-A lo largo del desarrollo de estos trabajos prácticos, se profundizó en dos algoritmos de la computación cuántica: la Estimación de Fase Cuántica (QPE) y la búsqueda de Grover. Su implementación en Qiskit permitió observar fenómenos como el _phase kickback_ (y el efecto de la fase global sobre este), la interferencia constructiva y destructiva de amplitudes, y el carácter periódico de las rotaciones.
+A lo largo del desarrollo de estos trabajos prácticos, se profundizó en dos algoritmos fundamentales de la computación cuántica: la Estimación de Fase Cuántica (QPE) y la búsqueda de Grover. Su implementación en Qiskit permitió observar fenómenos como el phase kickback (y cómo la fase global de un operador controlado se traduce en una fase relativa sobre el registro de control), la interferencia constructiva y destructiva de amplitudes, y el carácter periódico de las rotaciones y de la amplificación de amplitud.
 
 {{< pagebreak >}}
 

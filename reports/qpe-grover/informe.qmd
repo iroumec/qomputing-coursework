@@ -13,6 +13,8 @@ A lo largo de este informe, se presentan el desarrollo, el análisis teórico y 
 
 Para la implementación y simulación de los circuitos cuánticos se utilizó el _framework_ `Qiskit`, junto al lenguaje de programación Python. El código y las _notebooks_ interactivas se incluyen junto con este informe. También puede acceder a ellos a través del repositorio de GitHub del proyecto: [https://github.com/iroumec/Quantum-Computing](https://github.com/iroumec/Quantum-Computing), en `practicos/qpe.ipynb` y `practicos/grover.ipynb`.
 
+Las _notebooks_ contienen semillas preestablecidas de forma que los resultados y las conclusiones presentadas en este informe sean reproducibles.
+
 {{< pagebreak >}}
 
 # Estimación de Fase Cuántica (QPE)
@@ -63,11 +65,13 @@ Las instrucciones de este inciso son las mismas que para el anterior, pero utili
 
 ![Implementación de QPE para los distintos operadores unitarios, considerando $m = 2$ y $t = 4$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_ii.svg){width=80%}
 
-A continuación, se presentan los resultados.
+A continuación, se presentan los resultados de la simulación de los circuitos previos:
 
 ![Resultados de la evaluación del circuito QPE para los distintos operadores unitarios, considerando $m = 2$ y $t = 4$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_ii-2.png){width=80%}
 
-Cuando $m = 2$, el espacio objetivo es de dos qubits y el operador total actúa como un producto tensorial de operadores diagonales sobre cada qubit. Como cada estado de la base computacional de 2 qubits es un producto tensorial de autovectores de un solo qubit (por ejemplo, $\vert{}01\rangle = \vert{}0\rangle \otimes \vert{}1\rangle$), cada uno de los cuatro estados ($\vert{}00\rangle, \vert{}01\rangle, \vert{}10\rangle, \vert{}11\rangle$) es también un autovector del operador conjunto sobre los $m$ qubits objetivo y, por consiguiente, estos autovectores funcionan como entrada válida del circuito. Se aclara esto porque, de no cumplir los operadores unitarios esta propiedad, sería necesario observar mediante un histograma los valores de $\theta$ obtenidos para distintos shots del circuito. De observarse que no siempre se elige un mismo valor, sería un indicio de que dicho autoestado enviado como entrada al circuito mediante los qubits objetivo no es un autovector del operador y, por consiguiente, no es válido aplicarle el algoritmo. Como en el inciso i), los qubits objetivo se preparan en superposición uniforme: al ser todos los estados de la base autovectores, cada fila de la tabla corresponde a un operador y uno de ellos. Para el estado $|11\rangle$, las fases individuales se suman módulo 1 debido a la estructura de producto tensorial ($U \otimes U$), lo que duplica la fase efectiva acumulada en el _phase kickback_. Por ello, si se compara con el inciso i), la fase del estado $|11\rangle$ es dos veces la fase del estado $|1\rangle$, módulo 1.
+Cuando $m = 2$, el espacio objetivo es de dos qubits y el operador total actúa como un producto tensorial de operadores diagonales sobre cada qubit. Como cada estado de la base computacional de 2 qubits es un producto tensorial de autovectores de un solo qubit (por ejemplo, $\vert{}01\rangle = \vert{}0\rangle \otimes \vert{}1\rangle$), cada uno de los cuatro estados ($\vert{}00\rangle, \vert{}01\rangle, \vert{}10\rangle, \vert{}11\rangle$) es también un autovector del operador conjunto sobre los $m$ qubits objetivo y, por consiguiente, estos autovectores funcionan como entrada válida del circuito. Se aclara esto porque, **de no cumplir los operadores unitarios esta propiedad, sería necesario observar mediante un histograma los valores de $\theta$ obtenidos para distintos _shots_ del circuito**. De observarse que no siempre se elige un mismo valor, sería un indicio de que dicho autoestado enviado como entrada al circuito mediante los qubits objetivo no es un autovector del operador y, por consiguiente, no es válido aplicarle el algoritmo.
+
+Como en el inciso i), los qubits objetivo se preparan en superposición uniforme: al ser todos los estados de la base autovectores, cada fila de la tabla corresponde a un operador y uno de ellos. Para el estado $|11\rangle$, las fases individuales se suman módulo 1 debido a la estructura de producto tensorial ($U \otimes U$), lo que duplica la fase efectiva acumulada en el _phase kickback_. Por ello, si se compara con el inciso i), la fase del estado $|11\rangle$ es dos veces la fase del estado $|1\rangle$, módulo 1.
 
 ### Inciso iii)
 
@@ -79,7 +83,7 @@ A continuación, se presentan los resultados de la evaluación de los circuitos 
 
 ![Resultados de la evaluación del circuito QPE para los distintos operadores unitarios, considerando $m = 1$ y $t = 6$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_iii-2.png){width=80%}
 
-Incrementar el registro de estimación a $t = 6$ qubits cuadruplica la resolución de la grilla ($\Delta\theta = 1/64$), permitiendo representar de forma exacta fases que en $t = 4$ quedaban truncadas. No obstante, en el práctico, **todas las fases obtenidas pueden representarse con 4 qubits de estimación**. Por consiguiente, como puede observarse, el resultado no varía con respecto al inciso i). Los últimos qubits de estimación añadidos no son utilizados. Estos qubits no mejoran la aproximación, pues esta ya es precisa. Así, se concluye que el incremento de los qubits de estimación ($t$) de 4 a 6 no presenta una mejora en la precisión del valor de $\theta$ buscado.
+Incrementar el registro de estimación a $t = 6$ qubits cuadruplica la resolución de la grilla ($\Delta\theta = 1/64$), permitiendo representar de forma exacta fases que en $t = 4$ quedaban truncadas. No obstante, en el práctico, **todas las fases obtenidas pueden representarse con 4 qubits de estimación**. Por consiguiente, como puede observarse en la tabla, el resultado no varía con respecto al inciso i). Los últimos qubits de estimación añadidos no son utilizados. Estos qubits no mejoran la aproximación, pues esta ya es precisa. Así, se concluye que el incremento de los qubits de estimación ($t$) de 4 a 6 no presenta una mejora en la precisión del valor de $\theta$ buscado.
 
 ### Inciso iv)
 
@@ -88,7 +92,7 @@ Este inciso pide, utilizando $m = 1$ y $t = 4$, probar la implementación para u
 - $U = Rz(-π/4)$; y
 - $U = Rz(-3π/4)$.
 
-Los operadores unitarios presentados anteriormente se caracterizan por tener ángulos negativos. A continuación, se presenta la implementación de sus circuitos:
+Los operadores unitarios presentados anteriormente se caracterizan, a diferencia de los que se trabajaron hasta el momento, por tener ángulos negativos. A continuación, se presenta la implementación de sus circuitos:
 
 ![Implementación del algoritmo QPE para los operadores unitarios Rz(-π/4) y Rz(-3π/4), con $m = 1$ y $t = 4$.](assets/figures/qpe/ejercicio_1-resolucion-inciso_iv.svg){width=80%}
 
@@ -102,13 +106,11 @@ Debido a la periodicidad modular de la fase compleja ($e^{-2\pi i |\theta|} = e^
 
 ## Ejercicio 2
 
-Este ejercicio pide analizar, para el ejercicio 1.i), el impacto de la fase global de los autovalores. Para ello, se decidió comparar el circuito con los operadores unitarios de rotación $Z$ y $Rz(\pi)$. Esto se debe a que estos operadores, presentes en el ejercicio 1.i), solo se diferencian entre sí en su fase global y considero que es la forma más directa de notar su efecto.
-
-A continuación, se recuerda la implementación del circuito para ambos operadores unitarios:
+Este ejercicio pide analizar, para el ejercicio 1.i), el impacto de la fase global de los autovalores. Para ello, se decidió comparar el circuito con los operadores unitarios de rotación $Z$ y $Rz(\pi)$. Esto se debe a que estos operadores, presentes en el ejercicio 1.i), solo se diferencian entre sí en su fase global y considero que es la forma más directa de apreciar el impacto de la fase global. Se recuerda la implementación del circuito para ambos operadores unitarios:
 
 ![Implementación del algoritmo QPE para los operadores unitarios $Z$ y $Rz(\pi)$, con $m = 1$ y $t = 4$.](assets/figures/qpe/ejercicio_2-resolucion.svg){#fig-qpe-resolucion width=90%}
 
-A continuación, se muestran los resultados obtenidos:
+A continuación, se muestran los resultados obtenidos de la simulación de los circuitos previos:
 
 ![Resultados de la evaluación del circuito QPE para los operadores unitarios $Z$ y $Rz(\pi)$, con $m = 1$ y $t = 4$.](assets/figures/qpe/ejercicio_2-resolucion-2.png){#fig-qpe-resolucion-2 width=90%}
 
@@ -122,9 +124,9 @@ Si estas compuertas se aplicaran a un qubit y se realizara la medición, las pro
 
 Los autovalores de $Z$ son $1$ y $-1$, mientras que los de $Rz(\pi)$ son $-i$ y $i$. Es decir, la fase global $e^{-i\pi/2}$ multiplica ambos autovalores, lo que desplaza las dos fases estimadas en $-0.25$ (módulo 1). La diferencia entre las fases de $\lvert 0 \rangle$ y $\lvert 1 \rangle$ se mantiene en $0.5$.
 
-Esto ocurre porque el QPE utiliza el operador controlado. Cuando el qubit de control está en $\lvert 1 \rangle$, se aplica $U$ al objetivo, y cuando está en $\lvert 0 \rangle$, no se aplica nada. Por lo tanto, la fase global de $U$ deja de ser global y pasa a ser una fase relativa entre $\lvert 0 \rangle$ y $\lvert 1 \rangle$ del qubit de control (_phase kickback_), que es justamente lo que el QPE estima.
+Esto ocurre porque el QPE utiliza el operador controlado. Cuando el qubit de control está en $\lvert 1 \rangle$, se aplica $U$ al objetivo, y cuando está en $\lvert 0 \rangle$, no se aplica nada. Por lo tanto, la fase global de $U$ deja de ser global y pasa a ser una fase relativa entre $\lvert 0 \rangle$ y $\lvert 1 \rangle$ del qubit de control (lo que se conoce como _phase kickback_), que es justamente lo que el QPE estima.
 
-En conclusión, la fase global no afecta las probabilidades de medición de un estado, pero sí la fase estimada por el QPE, por lo que el operador debe especificarse con su fase global incluida.
+En conclusión, **la fase global no afecta las probabilidades de medición de un estado, pero sí la fase estimada por el QPE, por lo que el operador debe especificarse con su fase global incluida**.
 
 {{< pagebreak >}}
 
@@ -134,10 +136,10 @@ En conclusión, la fase global no afecta las probabilidades de medición de un e
 
 El algoritmo de Grover permite encontrar uno o más elementos marcados dentro de un espacio de búsqueda no estructurado de tamaño $N = 2^n$ utilizando únicamente $\mathcal{O}(\sqrt{N})$ evaluaciones del oráculo, lo que representa una aceleración cuadrática respecto a la búsqueda clásica $\mathcal{O}(N)$.
 
-Cada iteración de Grover ($G = D \cdot U_\omega$) se compone de dos etapas:
+Cada iteración de Grover se compone de dos etapas:
 
-1. **Oráculo ($U_\omega$):** Invierte la fase de los estados solución $|x\rangle$ tales que $f(x) = 1$, aplicando la transformación $|x\rangle \mapsto (-1)^{f(x)}|x\rangle$.
-2. **Operador de Difusión ($D$):** Realiza una inversión sobre la amplitud media mediante el operador $2|s\rangle\langle s| - I$ (o equivalente salvo fase global $I - 2|s\rangle\langle s|$), amplificando constructivamente la probabilidad de medir los estados marcados.
+1. **Oráculo ($U$ o $U_\omega$, dependiendo de la fuente):** Invierte la fase de los estados solución $|x\rangle$ tales que $f(x) = 1$, aplicando la transformación $|x\rangle \mapsto (-1)^{f(x)}|x\rangle$.
+2. **Operador de Difusión ($D$) u Operador de Grover ($G$):** Realiza una inversión sobre la amplitud media mediante el operador $2|s\rangle\langle s| - I$ (o equivalente salvo fase global $I - 2|s\rangle\langle s|$), amplificando constructivamente la probabilidad de medir los estados marcados.
 
 Con el fundamento teórico presentado, se prosigue con la resolución de los ejercicios.
 
@@ -161,7 +163,7 @@ El primer oráculo es un CCZ de 3 qubits. A continuación, se presenta su implem
 
 ![Circuito correspondiente al oráculo CCZ de 3 qubits.](assets/figures/grover/resoluciones-ejercicio_1-inciso_i.svg){width=30%}
 
-El algoritmo de Grover para el anterior oráculo, con una única iteración, se presenta a continuación:
+El algoritmo de Grover para el anterior oráculo, con una única iteración, es el siguiente:
 
 ![Algoritmo de Grover (una iteración) para el oráculo CCZ de 3 qubits (abstracción alta).](assets/figures/grover/resoluciones-ejercicio_1-inciso_i-2.svg){width=40%}
 
@@ -197,7 +199,7 @@ El oráculo de este ejercicio es CCZ, de tres qubits. A continuación, se muestr
 
 ![Histogramas correspondientes a la ejecución del algoritmo de Grover con oráculo CCZ para 1..9 iteraciones.](assets/figures/grover/resoluciones-ejercicio_2-inciso_i.svg){width=80%}
 
-Como es posible observar, los mejores resultados se obtienen con seis iteraciones. No obstante, es necesario evaluar si un número tan elevado de iteraciones es conveniente. Esto se debe a que cada iteración añade lógica al circuito que puede impactar en su tiempo de ejecución, compuertas nativas, costo, entre otros. Una iteración o dos iteraciones ya pueden considerarse lo suficientemente buenas y no se requiere llegar a seis para obtener un resultado casi perfecto.
+Como es posible observar, los mejores resultados se obtienen con seis iteraciones. No obstante, **es necesario evaluar si un número tan elevado de iteraciones es conveniente**. Esto se debe a que cada iteración añade lógica al circuito que puede impactar en su tiempo de ejecución, compuertas nativas, costo, entre otros. Una iteración o dos iteraciones ya pueden considerarse lo suficientemente buenas y no se requiere llegar a seis para obtener un resultado casi perfecto.
 
 ### Inciso ii)
 
@@ -215,13 +217,13 @@ Se pide implementar el algoritmo de Grover para la función booleana $x_2'x_1.x_
 
 ![Circuito correspondiente al oráculo que describe la función booleana $x_2'x_1.x_0$.](assets/figures/grover/resoluciones-ejercicio_3.svg){width=30%}
 
-Luego, se construye el algoritmo de Grover, con el operador y el oráculo como cajas negras. A continuación, se visualizan los histogramas del algoritmo para las nueve variaciones definidas en el ejercicio 2.
+Luego, se construye el algoritmo de Grover, con el operador y el oráculo como cajas negras. Se visualizan los histogramas del algoritmo para las nueve variaciones definidas en el ejercicio 2:
 
 ![Histogramas correspondientes a la ejecución del algoritmo de Grover con oráculo $x_2'x_1.x_0$ para 1..9 iteraciones.](assets/figures/grover/resoluciones-ejercicio_3-3.svg){width=90%}
 
-De acuerdo con los histogramas, el mejor resultado se obtiene con 6 (seis) iteraciones. No obstante, como se planteó ya en los anteriores ejercicios, no considero justificada la adición de tanta lógica adicional cuando el resultado con menos iteraciones ya es lo suficientemente bueno. Por ello, considero que el número ideal de iteraciones Oráculo-Grover es dos, y solo utilizaría seis si el número de shots es muy reducido.
+De acuerdo con los histogramas, el mejor resultado se obtiene con 6 (seis) iteraciones. No obstante, como se planteó ya en los anteriores ejercicios, personalmente, no considero justificada la adición de tanta lógica adicional cuando el resultado con menos iteraciones ya es lo suficientemente bueno. Por ello, considero que el número ideal de iteraciones Oráculo-Grover es dos, y solo utilizaría seis si el número de shots es muy reducido.
 
-Teóricamente, con $N = 8$ estados (por tener 3 qubits, lo cual genera $2^3 = 8$ estados) y $M = 1$ solución, el ángulo de rotación por iteración cumple $\sin\theta = \sqrt{M/N} = 1/\sqrt{8}$, es decir, $\theta \approx 0{,}361$ rad. La probabilidad de medir el estado buscado tras $k$ iteraciones es $\sin^2((2k+1)\theta)$, que se maximiza para $k \approx \frac{\pi}{4}\sqrt{N/M} - \frac{1}{2} \approx 1{,}7$, es decir, $k = 2$ iteraciones, con una probabilidad de aproximadamente $94{,}5\%$ (con $k = 1$ es de aproximadamente $78{,}1\%$). Que $k = 6$ dé un resultado cercano al $100\%$ se debe a que $13\theta \approx \frac{3\pi}{2}$: es un máximo secundario por la periodicidad de la probabilidad, no el mínimo número de iteraciones que alcanza el óptimo. Ese mínimo es $k = 2$, lo que respalda la elección de dos iteraciones como el número ideal.
+Teóricamente, con $N = 8$ estados (por tener 3 qubits, lo cual genera $2^3 = 8$ estados) y $M = 1$ solución, el ángulo de rotación por iteración cumple $\sin\theta = \sqrt{M/N} = 1/\sqrt{8}$, es decir, $\theta \approx 0{,}361$ rad. La probabilidad de medir el estado buscado tras $k$ iteraciones es $\sin^2((2k+1)\theta)$, que se maximiza para $k \approx \frac{\pi}{4}\sqrt{N/M} - \frac{1}{2} \approx 1{,}7$, es decir, $k = 2$ iteraciones, con una probabilidad de aproximadamente $94{,}5\%$ (con $k = 1$ es de aproximadamente $78{,}1\%$). Que en los histogramas $k = 6$ parezca dar un resultado cercano al $100\%$ se debe a que $13\theta \approx \frac{3\pi}{2}$: es un máximo secundario por la periodicidad de la probabilidad, no el mínimo número de iteraciones que alcanza el óptimo. Ese mínimo es $k = 2$, lo que respalda la elección de dos iteraciones como el número ideal.
 
 {{< pagebreak >}}
 
@@ -229,7 +231,7 @@ Teóricamente, con $N = 8$ estados (por tener 3 qubits, lo cual genera $2^3 = 8$
 
 Se pide implementar el algoritmo de Grover para la función booleana $x_2'x_1'x_0 + x_2 x_1 x_0'$, determinar el número ideal de iteraciones Oráculo-Grover y justificar la respuesta.
 
-Como primer paso, se define el oráculo que permita detectar la función. La función `x2’x1’x0 + x2.x1.x0’` vale 1 para dos entradas: $x_2x_1x_0 = 001$ y $x_2x_1x_0 = 110$. Al igual que en el ejercicio anterior, se utiliza un oráculo de fase: cada término se marca por separado, negando los qubits necesarios para convertir el estado buscado en $|111\rangle$, aplicando una CCZ y restableciendo luego los qubits. Como cada término corresponde a un estado distinto, el orden en que se aplican no importa. Así, la implementación del circuito propuesto es la siguiente:
+Como primer paso, se define el oráculo que permita detectar la función. La función $x2’x1’x0 + x2.x1.x0$` vale 1 para dos entradas: $x_2x_1x_0 = 001$ y $x_2x_1x_0 = 110$. Al igual que en el ejercicio anterior, se utiliza un oráculo de fase: cada término se marca por separado, negando los qubits necesarios para convertir el estado buscado en $|111\rangle$, aplicando una CCZ y restableciendo luego los qubits. Como cada término corresponde a un estado distinto, el orden en que se aplican no importa. Así, la implementación del circuito propuesto es la siguiente:
 
 ![Circuito correspondiente al oráculo que describe la función booleana $x_2'x_1'x_0 + x_2 x_1 x_0'$.](assets/figures/grover/resoluciones-ejercicio_4.svg){width=40%}
 
@@ -237,11 +239,11 @@ Considerando el anterior oráculo, se construye el algoritmo de Grover. A contin
 
 ![Histogramas correspondientes a la ejecución del algoritmo de Grover con oráculo $x_2'x_1'x_0 + x_2 x_1 x_0'$ para 1..9 iteraciones.](assets/figures/grover/resoluciones-ejercicio_4-3.svg){width=60%}
 
-Una única iteración es suficiente para alcanzar resultados muy buenos. Añadir más iteraciones no solo empeora el resultado (salvo que el número de iteraciones pueda describirse mediante la fórmula $1 + 3m$, donde $m \geq 0$), sino que añade complejidad innecesaria al circuito.
+Con base en el histograma, una única iteración pareciera ser suficiente para alcanzar resultados muy buenos. Añadir más iteraciones no solo empeora el resultado (salvo que el número de iteraciones pueda describirse mediante la fórmula $1 + 3m$, donde $m \geq 0$), sino que añade complejidad innecesaria al circuito.
 
-Algo curioso sobre este ejercicio es que los gráficos se repiten cada 3 iteraciones. Esto se debe a que los gráficos 1, 4 y 7 son iguales; también lo son los gráficos 2, 5 y 8; y los 3, 6 y 9. La función utilizada para estos gráficos es la misma que la utilizada para los anteriores. No hay reutilización de datos y se revisó el código para verificar que no se haya cometido ningún error. Incluso, se probó con otras semillas y aumentando el número de iteraciones a 25 y el patrón se sigue repitiendo.
+Algo curioso sobre este ejercicio es que los gráficos se repiten cada 3 iteraciones: los gráficos 1, 4 y 7 son iguales; también lo son los gráficos 2, 5 y 8; y los 3, 6 y 9. La función utilizada para estos gráficos es la misma que la utilizada para los anteriores. No hay reutilización de datos y se revisó el código para verificar que no se haya cometido ningún error. Incluso, se probó con otras semillas y aumentando el número de iteraciones a 25 y el patrón se sigue repitiendo.
 
-Esto puede justificarse teóricamente. Con $N = 8$ estados y $M = 2$ soluciones, $\sin\theta = \sqrt{M/N} = 1/2$, por lo que $\theta = \frac{\pi}{6}$. La probabilidad de medir un estado buscado tras $k$ iteraciones es $\sin^2\left((2k+1)\frac{\pi}{6}\right)$. Esta vale exactamente $1$ cuando $(2k+1)\frac{\pi}{6} = \frac{\pi}{2} + m\pi$, es decir, para $k = 1 + 3m$, que es la fórmula que se dedujo a partir de los gráficos. Además, al aumentar $k$ en 3 el argumento aumenta en $\pi$ y el seno al cuadrado no cambia, lo que explica que los gráficos se repitan cada 3 iteraciones. Para $k = 2$ y $k = 3$ la probabilidad es $0{.}25$, lo cual coincide con los histogramas obtenidos. El número ideal de iteraciones es, entonces, $k = 1$, ya que alcanza el $100\%$ con el menor costo.
+Lo anterior puede justificarse teóricamente. Con $N = 8$ estados y $M = 2$ soluciones, $\sin\theta = \sqrt{M/N} = 1/2$, por lo que $\theta = \frac{\pi}{6}$. La probabilidad de medir un estado buscado tras $k$ iteraciones es $\sin^2\left((2k+1)\frac{\pi}{6}\right)$. Esta vale exactamente $1$ cuando $(2k+1)\frac{\pi}{6} = \frac{\pi}{2} + m\pi$, es decir, para $k = 1 + 3m$, que es la fórmula que se dedujo a partir de los gráficos. Además, al aumentar $k$ en 3 el argumento aumenta en $\pi$ y el seno al cuadrado no cambia. Esto último explica que los gráficos se repitan cada 3 iteraciones. Para $k = 2$ y $k = 3$ la probabilidad es $0{.}25$, lo cual tiene sentido con los histogramas obtenidos. El número ideal de iteraciones es, entonces, $k = 1$, ya que alcanza el $100\%$ con el menor costo.
 
 {{< pagebreak >}}
 
